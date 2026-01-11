@@ -1,0 +1,455 @@
+/* ====== Theme-ish fallbacks (uses your project vibe) ====== */
+:root {
+    --pm-accent: var(--mp-accent, #5aa5a0);
+    --pm-gold: #e7b22f;
+    --pm-ink: #111111;
+    --pm-muted: rgba(17, 17, 17, 0.62);
+    --pm-border: rgba(17, 17, 17, 0.10);
+    --pm-card: rgba(255, 255, 255, 0.92);
+    --pm-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+}
+
+/* ====== Backdrop ====== */
+.pm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    padding: 2rem 1rem;
+
+    display: grid;
+    place-items: center;
+
+    background: radial-gradient(900px 500px at 20% 10%,
+            rgba(90, 165, 160, 0.22),
+            transparent 60%),
+        radial-gradient(900px 500px at 85% 20%,
+            rgba(231, 178, 47, 0.18),
+            transparent 55%),
+        rgba(0, 0, 0, 0.55);
+
+    backdrop-filter: blur(6px);
+}
+
+/* ====== Modal Card ====== */
+.pm-card {
+    margin-top: 105px;
+    width: min(1100px, 100%);
+    max-height: 86vh;
+    overflow: auto;
+
+    position: relative;
+    border-radius: 18px;
+
+    background: var(--pm-card);
+    border: 1px solid var(--pm-border);
+    box-shadow: var(--pm-shadow);
+
+    animation: pmPop 140ms ease-out;
+}
+
+@keyframes pmPop {
+    from {
+        transform: translateY(10px) scale(0.985);
+        opacity: 0.7;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* ====== Close button ====== */
+.pm-close {
+    position: sticky;
+    top: 12px;
+    margin-left: auto;
+    z-index: 2;
+
+    display: grid;
+    place-items: center;
+
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+
+    border: 1px solid var(--pm-border);
+    background: rgba(255, 255, 255, 0.9);
+
+    font-size: 24px;
+    line-height: 1;
+    color: var(--pm-ink);
+    cursor: pointer;
+
+    float: right;
+    margin: 12px 12px 0 0;
+
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.pm-close:hover {
+    transform: translateY(-1px);
+    background: rgba(90, 165, 160, 0.12);
+    border-color: rgba(90, 165, 160, 0.35);
+}
+
+/* ====== Top layout (image left, info right) ====== */
+.pm-top {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 1.4rem;
+    padding: 1.4rem;
+}
+
+.pm-media {
+    border-radius: 16px;
+    border: 1px solid rgba(90, 165, 160, 0.18);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+    min-height: 320px;
+
+    display: grid;
+    place-items: center;
+}
+
+.pm-media img {
+    width: 100%;
+    height: 100%;
+    max-height: 460px;
+    object-fit: contain;
+    display: block;
+    padding: 1rem;
+
+    transition: transform 240ms ease;
+}
+
+.pm-media:hover img {
+    transform: scale(1.02);
+}
+
+.pm-info {
+    padding: 0.2rem 0.2rem 0.4rem;
+}
+
+.pm-title {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    color: var(--pm-ink);
+}
+
+.pm-subrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+
+    margin-top: 0.6rem;
+    color: var(--pm-muted);
+    font-size: 0.95rem;
+}
+
+.pm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+
+    background: rgba(231, 178, 47, 0.18);
+    border: 1px solid rgba(231, 178, 47, 0.35);
+    color: rgba(17, 17, 17, 0.78);
+    font-weight: 650;
+}
+
+.pm-muted {
+    color: var(--pm-muted);
+}
+
+.pm-price {
+    margin-top: 0.9rem;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--pm-ink);
+}
+
+.pm-actions {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* ====== Buttons (your teal + hover) ====== */
+.pm-btn {
+    border-radius: 12px;
+    padding: 0.85rem 1.05rem;
+    font-weight: 700;
+    border: 1px solid var(--pm-border);
+    cursor: pointer;
+
+    transition: transform 170ms ease, background 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+}
+
+.pm-btn:active {
+    transform: translateY(0);
+}
+
+.pm-btn-primary {
+    background: var(--pm-accent);
+    color: #fff;
+    border-color: rgba(22, 22, 22, 0.22);
+    box-shadow: 0 10px 22px rgba(90, 165, 160, 0.28);
+}
+
+.pm-btn-primary:hover {
+    transform: translateY(-1px);
+    background: #4f9c97;
+    /* close to your hover vibe */
+    box-shadow: 0 14px 30px rgba(90, 165, 160, 0.34);
+}
+
+.pm-btn-secondary {
+    background: rgba(231, 178, 47, 0.14);
+    border-color: rgba(231, 178, 47, 0.45);
+    color: var(--pm-ink);
+}
+
+.pm-btn-secondary:hover {
+    transform: translateY(-1px);
+    background: rgba(231, 178, 47, 0.22);
+    border-color: rgba(231, 178, 47, 0.62);
+}
+
+.pm-btn-ghost {
+    background: rgba(255, 255, 255, 0.75);
+    color: rgba(17, 17, 17, 0.55);
+}
+
+.pm-btn-ghost:disabled {
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+/* ====== Meta box ====== */
+.pm-meta {
+    margin-top: 1.1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    border: 1px solid rgba(90, 165, 160, 0.16);
+    background: rgba(90, 165, 160, 0.06);
+}
+
+.pm-meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0;
+}
+
+.pm-meta-key {
+    color: rgba(17, 17, 17, 0.62);
+    font-weight: 650;
+}
+
+.pm-meta-val {
+    color: rgba(17, 17, 17, 0.82);
+    font-weight: 700;
+}
+
+/* ====== Bottom area (tabs like screenshot) ====== */
+.pm-bottom {
+    padding: 0 1.4rem 1.4rem;
+}
+
+.pm-tabs {
+    display: flex;
+    gap: 1.2rem;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.pm-tab {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0.9rem 0.15rem;
+
+    color: rgba(17, 17, 17, 0.55);
+    font-weight: 750;
+    cursor: pointer;
+
+    position: relative;
+    transition: color 170ms ease;
+}
+
+.pm-tab:hover {
+    color: rgba(17, 17, 17, 0.85);
+}
+
+.pm-tab.is-active {
+    color: var(--pm-ink);
+}
+
+.pm-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 100%;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--pm-accent);
+}
+
+.pm-tab-count {
+    color: rgba(17, 17, 17, 0.45);
+    font-weight: 700;
+}
+
+.pm-tabpanel {
+    padding-top: 1rem;
+}
+
+.pm-desc {
+    margin: 0;
+    color: rgba(17, 17, 17, 0.72);
+    line-height: 1.65;
+}
+
+/* Reviews */
+.pm-review {
+    border: 1px solid rgba(17, 17, 17, 0.08);
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+}
+
+.pm-review-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.pm-review-name {
+    font-weight: 800;
+    color: rgba(17, 17, 17, 0.85);
+}
+
+.pm-review-stars {
+    color: rgba(231, 178, 47, 0.95);
+    letter-spacing: 1px;
+    font-weight: 900;
+}
+
+.pm-review-text {
+    margin: 0.6rem 0 0;
+    color: rgba(17, 17, 17, 0.72);
+    line-height: 1.6;
+}
+
+/* ====== Related products strip ====== */
+.pm-related {
+    margin-top: 1.4rem;
+}
+
+.pm-related-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.pm-related h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 850;
+    color: rgba(17, 17, 17, 0.88);
+}
+
+.pm-related-hint {
+    color: rgba(17, 17, 17, 0.5);
+    font-size: 0.9rem;
+}
+
+.pm-related-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.pm-mini {
+    border-radius: 16px;
+    border: 1px solid rgba(17, 17, 17, 0.08);
+    background: rgba(255, 255, 255, 0.85);
+    padding: 0.85rem;
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
+
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.pm-mini:hover {
+    transform: translateY(-3px);
+    border-color: rgba(90, 165, 160, 0.30);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.10);
+}
+
+.pm-mini-img {
+    height: 92px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(90, 165, 160, 0.15), rgba(231, 178, 47, 0.16));
+    border: 1px solid rgba(90, 165, 160, 0.14);
+}
+
+.pm-mini-title {
+    margin-top: 0.7rem;
+    font-weight: 800;
+    color: rgba(17, 17, 17, 0.82);
+    font-size: 0.95rem;
+}
+
+.pm-mini-price {
+    margin-top: 0.25rem;
+    font-weight: 850;
+    color: rgba(17, 17, 17, 0.9);
+}
+
+.pm-mini-btn {
+    margin-top: 0.75rem;
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    border-radius: 12px;
+
+    border: 1px solid rgba(22, 22, 22, 0.16);
+    background: rgba(90, 165, 160, 0.10);
+    color: rgba(17, 17, 17, 0.85);
+    font-weight: 800;
+    cursor: pointer;
+
+    transition: background 170ms ease, transform 170ms ease, border-color 170ms ease;
+}
+
+.pm-mini-btn:hover {
+    background: rgba(90, 165, 160, 0.18);
+    border-color: rgba(90, 165, 160, 0.38);
+    transform: translateY(-1px);
+}
+
+/* ====== Responsive ====== */
+@media (max-width: 920px) {
+    .pm-top {
+        grid-template-columns: 1fr;
+    }
+
+    .pm-related-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .pm-related-row {
+        grid-template-columns: 1fr;

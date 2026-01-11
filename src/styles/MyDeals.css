@@ -1,0 +1,122 @@
+.deals-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.deals-header {
+    color: #2d3436;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.deals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.deal-card {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s;
+}
+
+.deal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.deal-info {
+    flex: 1;
+}
+
+.deal-role-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.deal-role-badge[data-role="Buyer"] {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.deal-role-badge[data-role="Seller"] {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.deal-title {
+    margin: 0 0 0.5rem 0;
+    color: #2d3436;
+    font-size: 1.25rem;
+}
+
+.deal-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #636e72;
+}
+
+.status-badge {
+    font-weight: 600;
+}
+
+.status-badge.completed {
+    color: #27ae60;
+}
+
+.status-badge.pending {
+    color: #f39c12;
+}
+
+.deal-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-left: 1.5rem;
+    border: 1px solid #eee;
+}
+
+.deal-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px dashed #ced6e0;
+    color: #636e72;
+}
+
+@media (max-width: 600px) {
+    .deal-card {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+    }
+
+    .deal-image {
+        margin-left: 0;
+        margin-bottom: 1rem;
+        width: 100%;
+        height: 150px;
+    }
+}

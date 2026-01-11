@@ -1,0 +1,50 @@
+:root {
+    --upl-accent: #e7b22f;
+    /* your yellow */
+    --upl-bg: rgba(255, 255, 255, 0.88);
+    --upl-text: #111;
+    --upl-border: rgba(17, 17, 17, 0.10);
+}
+
+.upl-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 1);
+    backdrop-filter: blur(6px);
+}
+
+.upl-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: var(--upl-bg);
+    border: 1px solid var(--upl-border);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+}
+
+.upl-spinner {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 3px solid rgba(0, 0, 0, 0.12);
+    border-top-color: var(--upl-accent);
+    animation: upl-spin 0.8s linear infinite;
+}
+
+.upl-text {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--upl-text);
+}
+
+@keyframes upl-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

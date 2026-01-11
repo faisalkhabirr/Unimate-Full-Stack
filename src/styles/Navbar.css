@@ -1,0 +1,405 @@
+.navbar {
+  width: 100%;
+  border-bottom: 1px solid #eaeaea;
+  background: #fff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding: 10px 20px 5px 20px;
+  transition: padding 0.4s ease, box-shadow 0.5s ease;
+}
+
+.navbar.navbar-scrolled {
+  padding: 4px 20px 4px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  color: #000;
+  text-decoration: none;
+} */
+
+.logo-icon {}
+
+.logo-icon img {
+  height: 60px;
+  width: auto;
+  display: block;
+}
+
+/* Middle menu */
+.nav-menu {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  padding-bottom: 10px;
+}
+
+.nav-link:hover {
+  /* color: #5aa5a0; */
+  border-bottom: 2px solid #5aa5a0;
+}
+
+/* Right actions */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.login-link {
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-link:hover {
+  color: #5aa5a0;
+
+}
+
+/* Buttons */
+.btn-primary {
+  background: #e7b22f;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn-primary:hover,
+.btn-outline:hover {
+  background: #5aa5a0;
+  color: black;
+}
+
+.btn-outline {
+  background: #e7b22f;
+  border: 1px solid #3f3f3f;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-icon:hover {
+  background-color: #f5f5f5;
+}
+
+.btn-icon,
+.btn-icon:visited,
+.btn-icon:active {
+  color: inherit;
+}
+
+.btn-icon {
+  border: 1px solid #cccccc00;
+  border-radius: 8px;
+  background: transparent;
+  color: #000;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent link color changes */
+.btn-icon:visited,
+.btn-icon:active {
+  color: #000;
+}
+
+/* Hover */
+.btn-icon:hover {
+  background-color: #f5f5f5;
+}
+
+/* Click */
+.btn-icon:active {
+  background-color: #cfcfcf;
+}
+
+/* =========================
+   Responsive Navbar (Tablet/Mobile)
+   Add at the END of Navbar.css
+========================= */
+
+/* Burger button (hidden on desktop) */
+.nav-burger {
+  display: none;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  line-height: 0;
+}
+
+/* Mobile menu container */
+.nav-mobile {
+  display: none;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.nav-mobile--open {
+  max-height: 520px;
+  /* enough space for links */
+}
+
+.nav-mobile-inner {
+  padding: 10px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-mobile-link {
+  text-decoration: none;
+  color: #111;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.nav-mobile-link:hover {
+  background: #f5f5f5;
+}
+
+/* Tablet + Mobile breakpoints */
+@media (max-width: 900px) {
+
+  /* Show burger */
+  .nav-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hide desktop links */
+  .nav-menu {
+    display: none;
+  }
+
+  /* Show mobile panel */
+  .nav-mobile {
+    display: block;
+  }
+
+  /* Make right side tighter */
+  .nav-actions {
+    gap: 10px;
+  }
+
+  /* Smaller padding on mobile */
+  .navbar {
+    padding: 10px 14px 6px 14px;
+  }
+
+  .navbar.navbar-scrolled {
+    padding: 6px 14px 6px 14px;
+  }
+
+  /* Slightly smaller logo */
+  .logo-icon img {
+    height: 52px;
+  }
+
+  /* Buttons smaller for mobile */
+  .btn-outline {
+    padding: 8px 10px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 420px) {
+  .logo-icon img {
+    height: 46px;
+  }
+
+  .btn-primary {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+}
+
+/* =========================
+   Responsive hamburger + mobile menu
+========================= */
+
+.nav-burger {
+  display: none;
+  /* desktop hidden */
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  line-height: 0;
+}
+
+.nav-burger:hover {
+  background: #f5f5f5;
+}
+
+/* Mobile menu panel */
+.nav-mobile {
+  display: none;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.nav-mobile--open {
+  max-height: 520px;
+}
+
+.nav-mobile-inner {
+  padding: 10px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-mobile-link {
+  text-decoration: none;
+  color: #111;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.nav-mobile-link:hover {
+  background: #f5f5f5;
+}
+
+.nav-mobile-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav-mobile-cta {
+  background: #e7b22f;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #111;
+}
+
+.nav-mobile-logout {
+  background: #fff;
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #b91c1c;
+}
+
+/* Breakpoint: tablet/mobile */
+@media (max-width: 900px) {
+
+  /* Hide desktop menu links */
+  .nav-menu {
+    display: none;
+  }
+
+  /* Show burger */
+  .nav-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Show mobile panel */
+  .nav-mobile {
+    display: block;
+  }
+
+  /* Tighten spacing a bit */
+  .nav-actions {
+    gap: 10px;
+  }
+}
+
+/* Optional: avatar size if you need it */
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* =========================
+   Inbox Button (Navbar)
+========================= */
+
+/* Messenger-style transparent icon */
+.pro-btn--icon {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  overflow: visible;
+}
+
+.messenger-icon {
+  width: 22px;
+  height: 22px;
+  color: #111;
+  /* adapts to your theme */
+}
+
+/* hover effect (optional but nice) */
+.pro-btn--icon:hover .messenger-icon {
+  color: #e7b22f;
+  /* your theme yellow */
+}
+
+/* Remove outline/border for messenger icon button */
+.pro-btn--icon {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Remove focus outline (keyboard focus) */
+.pro-btn--icon:focus,
+.pro-btn--icon:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}

@@ -1,0 +1,508 @@
+:root {
+    --pp-accent: var(--mp-accent, #5aa5a0);
+    --pp-gold: #e7b22f;
+    --pp-ink: #111;
+    --pp-muted: rgba(17, 17, 17, .62);
+    --pp-border: rgba(17, 17, 17, .10);
+}
+
+.pp-wrap {
+    background: #fff;
+    padding: 2.2rem 1rem 3rem;
+}
+
+.pp-container {
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.pp-loading {
+    max-width: 1120px;
+    margin: 2rem auto;
+    font-weight: 800;
+    color: rgba(17, 17, 17, .72);
+}
+
+/* ===================== HERO (matches screenshot) ===================== */
+.pp-hero {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+/* Left media column */
+.pp-hero__media {
+    position: relative;
+    padding-left: 54px;
+    /* space for small thumb */
+}
+
+.pp-thumb {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid rgba(17, 17, 17, .12);
+    background: #fff;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .08);
+}
+
+.pp-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pp-mainimg {
+    border-radius: 10px;
+    background: #f6f6f6;
+    display: grid;
+    place-items: center;
+    padding: 1.2rem;
+}
+
+.pp-mainimg img {
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Right info column */
+.pp-title {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 850;
+    color: var(--pp-ink);
+}
+
+.pp-ratingrow {
+    margin-top: .45rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    color: var(--pp-muted);
+    font-size: .92rem;
+}
+
+.pp-stars {
+    color: var(--pp-gold);
+    letter-spacing: 1px;
+    font-weight: 900;
+}
+
+.pp-ratingtext {
+    color: rgba(17, 17, 17, .55);
+}
+
+.pp-price {
+    margin-top: .65rem;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: var(--pp-ink);
+}
+
+.pp-shortdesc {
+    margin-top: .65rem;
+    color: rgba(17, 17, 17, .72);
+    line-height: 1.6;
+    font-size: .95rem;
+    max-width: 54ch;
+}
+
+/* Buy row */
+.pp-buyrow {
+    margin-top: .9rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.pp-qty {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid rgba(17, 17, 17, .14);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.pp-qtybtn {
+    width: 38px;
+    border: 0;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 900;
+    color: rgba(17, 17, 17, .72);
+    transition: background .15s ease;
+}
+
+.pp-qtybtn:hover {
+    background: rgba(90, 165, 160, .10);
+}
+
+.pp-qtyinput {
+    width: 48px;
+    border: 0;
+    outline: none;
+    text-align: center;
+    font-weight: 800;
+    color: var(--pp-ink);
+}
+
+/* Add to cart button (teal like your project) */
+.pp-addcart {
+    border: 1px solid rgba(22, 22, 22, .20);
+    background: var(--pp-accent);
+    color: #fff;
+    padding: .62rem 1.05rem;
+    border-radius: 8px;
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    box-shadow: 0 10px 22px rgba(90, 165, 160, .25);
+}
+
+.pp-addcart:hover {
+    transform: translateY(-1px);
+    background: #4f9c97;
+    box-shadow: 0 14px 28px rgba(90, 165, 160, .32);
+}
+
+/* Meta */
+.pp-meta {
+    margin-top: .8rem;
+    color: rgba(17, 17, 17, .7);
+    font-size: .92rem;
+}
+
+.pp-meta-row {
+    margin-top: .35rem;
+    display: flex;
+    gap: .35rem;
+}
+
+.pp-meta-k {
+    font-weight: 800;
+    color: rgba(17, 17, 17, .62);
+}
+
+.pp-meta-v {
+    font-weight: 800;
+    color: rgba(17, 17, 17, .80);
+}
+
+/* Message seller (subtle) */
+.pp-msgseller {
+    margin-top: .9rem;
+    width: fit-content;
+    border-radius: 8px;
+    padding: .62rem 1rem;
+    border: 1px solid rgba(90, 165, 160, .35);
+    background: rgba(90, 165, 160, .10);
+    color: rgba(17, 17, 17, .85);
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.pp-msgseller:hover {
+    transform: translateY(-1px);
+    background: rgba(90, 165, 160, .16);
+    border-color: rgba(90, 165, 160, .55);
+}
+
+/* ===================== Tabs (like screenshot) ===================== */
+.pp-tabs {
+    margin-top: 1.35rem;
+    display: flex;
+    gap: 1.6rem;
+    border-bottom: 1px solid rgba(17, 17, 17, .08);
+}
+
+.pp-tab {
+    border: 0;
+    background: transparent;
+    padding: .85rem 0;
+    cursor: pointer;
+    font-weight: 900;
+    color: rgba(17, 17, 17, .55);
+    position: relative;
+}
+
+.pp-tab.is-active {
+    color: var(--pp-ink);
+}
+
+.pp-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 100%;
+    height: 2px;
+    background: var(--pp-accent);
+    border-radius: 999px;
+}
+
+/* ===================== Description area ===================== */
+.pp-panel {
+    padding-top: 1.05rem;
+}
+
+.pp-descbox h3 {
+    margin: 0 0 .6rem;
+    font-size: 1rem;
+    font-weight: 900;
+    color: rgba(17, 17, 17, .86);
+}
+
+.pp-desc {
+    margin: 0;
+    line-height: 1.7;
+    color: rgba(17, 17, 17, .72);
+    max-width: 92ch;
+}
+
+/* Review */
+.pp-review {
+    border: 1px solid rgba(17, 17, 17, .08);
+    border-radius: 12px;
+    padding: .95rem 1rem;
+    background: rgba(255, 255, 255, .88);
+}
+
+.pp-review-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.pp-review-name {
+    font-weight: 900;
+    color: rgba(17, 17, 17, .85);
+}
+
+.pp-review-stars {
+    color: var(--pp-gold);
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.pp-review-text {
+    margin: .6rem 0 0;
+    color: rgba(17, 17, 17, .72);
+    line-height: 1.6;
+}
+
+/* ===================== Related products (like screenshot) ===================== */
+.pp-related {
+    margin-top: 1.4rem;
+}
+
+.pp-related-title {
+    margin: 0 0 .9rem;
+    font-size: 1.05rem;
+    font-weight: 950;
+    color: rgba(17, 17, 17, .86);
+}
+
+.pp-related-empty {
+    color: rgba(17, 17, 17, .62);
+}
+
+.pp-related-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.pp-rp {
+    border-radius: 12px;
+    border: 1px solid rgba(17, 17, 17, .08);
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
+    overflow: hidden;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.pp-rp:hover {
+    transform: translateY(-3px);
+    border-color: rgba(90, 165, 160, .30);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .10);
+}
+
+.pp-rp__img {
+    width: 100%;
+    border: 0;
+    padding: .75rem;
+    background: #f6f6f6;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.pp-rp__img img {
+    width: 100%;
+    height: 95px;
+    object-fit: contain;
+    display: block;
+}
+
+.pp-noimg {
+    height: 95px;
+    display: grid;
+    place-items: center;
+    font-size: 1.3rem;
+    opacity: .6;
+}
+
+.pp-rp__body {
+    padding: .7rem .75rem .85rem;
+}
+
+.pp-rp__title {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-weight: 900;
+    font-size: .88rem;
+    color: rgba(17, 17, 17, .82);
+    line-height: 1.2;
+}
+
+.pp-rp__price {
+    margin-top: .35rem;
+    font-weight: 950;
+    color: rgba(17, 17, 17, .90);
+}
+
+.pp-rp__btn {
+    margin-top: .65rem;
+    width: 100%;
+    padding: .55rem .7rem;
+    border-radius: 10px;
+    border: 1px solid rgba(22, 22, 22, .16);
+    background: rgba(90, 165, 160, .12);
+    font-weight: 900;
+    cursor: pointer;
+    transition: background .15s ease, transform .15s ease, border-color .15s ease;
+}
+
+.pp-rp__btn:hover {
+    background: rgba(90, 165, 160, .20);
+    border-color: rgba(90, 165, 160, .42);
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+    .pp-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .pp-hero__media {
+        padding-left: 0;
+    }
+
+    .pp-thumb {
+        display: none;
+    }
+
+    .pp-related-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .pp-related-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   Related Products – Mobile/Tablet layout like screenshot
+   ========================= */
+
+@media (max-width: 980px) {
+    .pp-related-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .pp-rp {
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .pp-rp__img {
+        padding: 0.9rem;
+        background: #f6f6f6;
+    }
+
+    .pp-rp__img img {
+        height: 120px;
+        object-fit: contain;
+    }
+
+    .pp-rp__body {
+        padding: 0.85rem 0.9rem 1rem;
+    }
+
+    .pp-rp__title {
+        font-size: 0.9rem;
+        font-weight: 900;
+        line-height: 1.25;
+    }
+
+    .pp-rp__price {
+        margin-top: 0.35rem;
+        font-size: 0.95rem;
+        font-weight: 950;
+    }
+
+    /* Button like screenshot */
+    .pp-rp__btn {
+        margin-top: 0.75rem;
+        border-radius: 12px;
+        padding: 0.62rem 0.8rem;
+        font-weight: 900;
+        width: 100%;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .pp-rp__btn::before {
+        content: "🛒";
+        font-size: 0.95rem;
+        line-height: 1;
+    }
+}
+
+@media (max-width: 520px) {
+
+    /* keep 2 columns like screenshot, but make it tighter */
+    .pp-related-grid {
+        gap: 0.85rem;
+    }
+
+    .pp-rp__img img {
+        height: 105px;
+    }
+
+    .pp-rp__btn {
+        padding: 0.6rem 0.75rem;
+    }
+}
