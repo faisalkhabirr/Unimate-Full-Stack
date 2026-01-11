@@ -1,90 +1,97 @@
-# 🎓 Unimate - Student Marketplace
+Unimate – Student Marketplace
 
-**A project of Purple Tech.**
+A project by Purple Tech
 
-A modern, minimal student marketplace for buying and selling items on campus. Built with React, Vite, and Supabase.
+Unimate is a modern student-focused marketplace designed for buying and selling items within a campus community. It provides a clean, minimal interface backed by secure authentication, real-time messaging, and a scalable backend powered by Supabase.
 
----
+Overview
 
-## ✨ Features
+Unimate enables students to list products, browse available items, communicate directly with sellers, and manage transactions in a secure and responsive environment. The project is built with real-world marketplace workflows in mind, emphasizing clean architecture, reliability, and usability.
 
-- 🔐 **Authentication**: Secure signup/login with Supabase Auth
-- 🛍️ **Marketplace**: Browse and search listings with real-time data
-- 💬 **Real-time Chat**: Message sellers directly with live updates
-- 🤝 **Deals**: Mark items as sold and track transactions
-- 👤 **Profile Management**: Manage your listings and view deal history  
-- 📱 **Responsive Design**: Works beautifully on all devices
+Features
 
----
+Secure user authentication using Supabase Auth
 
-## 📦 Prerequisites
+Marketplace with searchable and categorized listings
 
-- Node.js v16+ ([Download](https://nodejs.org))
-- A Supabase account ([Sign up free](https://supabase.com))
+Product condition handling (new / used)
 
----
+Real-time messaging between buyers and sellers
 
-## 🚀 Quick Start
+Deal tracking and sold item management
 
-### 1. Clone and Install
+User profile management with listing and deal history
 
-```bash
+Fully responsive design for desktop and mobile devices
+
+Prerequisites
+
+Before running the project, ensure you have the following installed:
+
+Node.js v16 or later
+
+A Supabase account
+
+Getting Started
+1. Clone the Repository
 git clone <your-repo-url>
 cd unimate
 npm install
-```
 
-### 2. Set Up Environment Variables
+2. Environment Configuration
 
-Copy the example environment file:
-```bash
+Create a .env file from the example provided:
+
 cp .env.example .env
-```
 
-Then fill in your Supabase credentials in `.env`:
-```env
+
+Add your Supabase credentials:
+
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
-```
 
-> **Where to find these:**
-> 1. Go to [Supabase Dashboard](https://app.supabase.com)
-> 2. Select your project
-> 3. Navigate to **Settings** → **API**
-> 4. Copy "Project URL" and "Project API keys (anon public)"
 
-### 3. Set Up Database
+To find these values:
 
-Run the following SQL scripts in your Supabase SQL Editor:
+Open the Supabase Dashboard
 
-1. **`supabase_schema.sql`** - Creates `listings` table and RLS policies
-2. **`chat_schema.sql`** - Creates `chats`, `messages`, and `deals` tables with RLS
+Select your project
 
-Both files are located in the project root.
+Go to Settings → API
 
-### 4. Configure Storage
+Copy the Project URL and anon public key
 
-1. Go to **Storage** in your Supabase Dashboard
-2. Create a new **public** bucket named `listing-images`
-3. RLS policies are already set up via the SQL scripts
+3. Database Setup
 
-### 5. Run Development Server
+Run the provided SQL scripts in the Supabase SQL Editor:
 
-```bash
+supabase_schema.sql – Creates listings table and RLS policies
+
+chat_schema.sql – Creates chats, messages, and deals tables with RLS
+
+Both files are located in the project root directory.
+
+4. Storage Configuration
+
+Open the Storage section in Supabase
+
+Create a public bucket named listing-images
+
+Required Row Level Security policies are already included in the SQL setup
+
+5. Run the Development Server
 npm run dev
-```
 
-Visit **http://localhost:5173** to see your app!
 
----
+The application will be available at:
 
-## 📁 Project Structure
+http://localhost:5173
 
-```
+Project Structure
 src/
-├── components/        # Reusable components (Navbar, ProtectedRoute)
-├── context/           # React Context (AuthContext)
-├── pages/             # Page components
+├── components/        Reusable UI components
+├── context/           Global state management (AuthContext)
+├── pages/             Application pages
 │   ├── Landing.jsx
 │   ├── Login.jsx
 │   ├── Register.jsx
@@ -95,71 +102,66 @@ src/
 │   ├── MyListings.jsx
 │   ├── MyDeals.jsx
 │   └── Profile.jsx
-├── routes/            # React Router configuration
-├── services/          # API helpers (chatService)
-├── styles/            # CSS modules
-└── supabaseClient.js  # Supabase initialization
-```
+├── routes/            Routing configuration
+├── services/          API and service helpers
+├── styles/            Application styles
+└── supabaseClient.js  Supabase client initialization
 
----
+Available Scripts
+Command	Description
+npm run dev	Start the development server
+npm run build	Create a production build
+npm run preview	Preview the production build locally
+Deployment
+Deploying to Vercel
 
-## 🎯 Available Scripts
+Push the project to GitHub
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build locally |
+Import the repository into Vercel
 
----
+Add environment variables:
 
-## 🌐 Deployment
+VITE_SUPABASE_URL
 
-### Deploy to Vercel (Recommended)
+VITE_SUPABASE_ANON_KEY
 
-1. Push your code to GitHub
-2. Go to [Vercel](https://vercel.com) and import your repository
-3. Add environment variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Deploy!
+Deploy the project
 
-### Deploy to Netlify
+Deploying to Netlify
 
-1. Build the project: `npm run build`
-2. Drag the `dist` folder to [Netlify Drop](https://app.netlify.com/drop)
-3. Configure environment variables in **Site settings** → **Build & deploy** → **Environment**
+Build the project using npm run build
 
----
+Upload the dist folder to Netlify
 
-## 🐛 Troubleshooting
+Configure environment variables in site settings
 
-**Issue**: "Supabase connection failed"
-- **Fix**: Check that your `.env` file has correct credentials
+Troubleshooting
 
-**Issue**: "No items showing in Marketplace"
-- **Fix**: Create a listing via `/create-listing` or check RLS policies
+Supabase connection errors
+Ensure environment variables are correctly set and the Supabase project is active.
 
-**Issue**: "Cannot upload images"
-- **Fix**: Verify `listing-images` bucket exists and is set to **public**
+No listings displayed
+Verify that listings exist in the database and Row Level Security policies allow access.
 
----
+Image upload issues
+Confirm the listing-images bucket exists and is marked as public.
 
-## 🔒 Security Notes
+Security Considerations
 
-- Never commit `.env` to version control (already in `.gitignore`)
-- Use Row Level Security (RLS) in production
-- Keep your Supabase keys secure
+Do not commit .env files to version control
 
----
+Always enable Row Level Security in production
 
-## 📚 Learn More
+Keep Supabase keys private and rotate them if exposed
 
-- [React Docs](https://react.dev)
-- [Vite Docs](https://vitejs.dev)
-- [Supabase Docs](https://supabase.com/docs)
-- [React Router](https://reactrouter.com)
+Resources
 
----
+React Documentation
 
-**Built with ❤️ for students, by students**
+Vite Documentation
+
+Supabase Documentation
+
+React Router Documentation
+
+Built for students, focused on simplicity, scalability, and real-world usability.
