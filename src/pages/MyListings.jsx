@@ -22,12 +22,27 @@ const MyListings = () => {
         try {
             const { data, error } = await supabase
                 .from("listings")
-                .select("*")
+                .select(`
+                    *,
+                    categories ( id, name, slug ),
+                    listing_images ( image_url, is_primary, sort_order )
+                `) // ✅ CHANGED: load category + listing images
                 .eq("seller_id", user.id)
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
-            setListings(data || []);
+
+            // ✅ OPTIONAL BUT GOOD: sort listing_images by sort_order for stable primary display
+            const normalized = (data || []).map((l) => ({
+                ...l,
+                listing_images: Array.isArray(l.listing_images)
+                    ? [...l.listing_images].sort(
+                        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+                    )
+                    : [],
+            }));
+
+            setListings(normalized || []);
         } catch (error) {
             console.error("Error fetching listings:", error.message);
         } finally {
@@ -49,6 +64,13 @@ const MyListings = () => {
         url && typeof url === "string" && url.trim().length > 0
             ? url
             : "https://via.placeholder.com/600x600?text=No+Image";
+
+    // ✅ ADDED: pick primary image from listing_images first, fallback to legacy image_url
+    const getPrimaryImage = (item) => {
+        const imgs = Array.isArray(item?.listing_images) ? item.listing_images : [];
+        const primary = imgs.find((x) => x?.is_primary) || imgs[0];
+        return primary?.image_url || item?.image_url || "";
+    };
 
     const handleDelete = async (id) => {
         if (
@@ -150,7 +172,8 @@ const MyListings = () => {
                                 title="View listing"
                             >
                                 <img
-                                    src={safeImg(item.image_url)}
+                                    // ✅ CHANGED: use primary listing_images first
+                                    src={safeImg(getPrimaryImage(item))}
                                     alt={item.title}
                                     loading="lazy"
                                 />
@@ -167,10 +190,10 @@ const MyListings = () => {
                                     </div>
                                 </div>
 
-                                {/* Optional meta row if you have fields like category/condition */}
+                                {/* ✅ CHANGED: category comes from joined table "categories" */}
                                 <div className="mylists-metaRow">
-                                    {item.category ? (
-                                        <span className="mylists-pill">{item.category}</span>
+                                    {item?.categories?.name ? (
+                                        <span className="mylists-pill">{item.categories.name}</span>
                                     ) : (
                                         <span className="mylists-pill mylists-pill--muted">
                                             Uncategorized

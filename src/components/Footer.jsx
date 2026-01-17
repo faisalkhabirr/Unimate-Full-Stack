@@ -75,6 +75,10 @@ const Footer = () => {
                 </nav>
 
                 <div className="footer-copy">
+                    A product of Purple Tech
+                </div>
+
+                <div className="footer-copy">
                     © 2026 Unimate
                 </div>
             </div>

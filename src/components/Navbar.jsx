@@ -1,11 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { User, Menu, X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient'; // 🔔 Inbox
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"; // 🔔 Inbox
-import { faEnvelope } from "@fortawesome/free-solid-svg-icons"; // 🔔 Inbox
-import '../styles/Navbar.css';
+import { Link, useNavigate } from "react-router-dom";
+import { User, Menu, X } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
+import "../styles/Navbar.css";
 import logo from "../assets/UnimateLogo1.png";
 
 const Navbar = () => {
@@ -15,7 +13,6 @@ const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
-    // 🔔 Inbox unread count
     const [unreadMsgs, setUnreadMsgs] = useState(0);
 
     useEffect(() => {
@@ -29,31 +26,31 @@ const Navbar = () => {
         };
 
         onScroll();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    // 🔔 Fetch unread inbox count (made reusable)
     const fetchUnread = async (uid) => {
         try {
+            // get all chats where user is buyer or seller
             const { data: chats, error: chatErr } = await supabase
                 .from("chats")
                 .select("id")
                 .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`);
 
             if (chatErr) {
-                console.error("Navbar unread: chat fetch error:", chatErr);
+                console.error("Unread count: chats error:", chatErr);
                 setUnreadMsgs(0);
                 return;
             }
 
-            const chatIds = chats?.map(c => c.id) || [];
-
+            const chatIds = (chats || []).map((c) => c.id);
             if (chatIds.length === 0) {
                 setUnreadMsgs(0);
                 return;
             }
 
+            // count unread messages not sent by me
             const { count, error: msgErr } = await supabase
                 .from("messages")
                 .select("id", { count: "exact", head: true })
@@ -62,19 +59,19 @@ const Navbar = () => {
                 .eq("is_read", false);
 
             if (msgErr) {
-                console.error("Navbar unread: message count error:", msgErr);
+                console.error("Unread count: messages error:", msgErr);
                 setUnreadMsgs(0);
                 return;
             }
 
             setUnreadMsgs(count || 0);
         } catch (e) {
-            console.error("Navbar unread: unexpected error:", e);
+            console.error("Unread count unexpected:", e);
             setUnreadMsgs(0);
         }
     };
 
-    // 🔔 Initial fetch + realtime updates (this is the main fix)
+    // realtime unread updater
     useEffect(() => {
         if (!user?.id) {
             setUnreadMsgs(0);
@@ -83,6 +80,7 @@ const Navbar = () => {
 
         fetchUnread(user.id);
 
+        // Listen to INSERT and UPDATE on messages table
         const channel = supabase
             .channel(`navbar-unread:${user.id}`)
             .on(
@@ -97,13 +95,9 @@ const Navbar = () => {
             )
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        return () => supabase.removeChannel(channel);
     }, [user?.id]);
 
-    // Close menu when resizing back to desktop
     useEffect(() => {
         const onResize = () => {
             if (window.innerWidth > 900) setMenuOpen(false);
@@ -115,7 +109,7 @@ const Navbar = () => {
     const handleLogout = async () => {
         await signOut();
         setMenuOpen(false);
-        navigate('/');
+        navigate("/");
     };
 
     const closeMenu = () => setMenuOpen(false);
@@ -123,26 +117,21 @@ const Navbar = () => {
     return (
         <nav className={`navbar ${scrolled ? "navbar-scrolled" : ""}`}>
             <div className="nav-container">
-
-                {/* Left: Logo */}
                 <Link to={user ? "/marketplace" : "/"} className="nav-logo" onClick={closeMenu}>
                     <span className="logo-icon">
                         <img src={logo} alt="Unimates Logo" />
                     </span>
                 </Link>
 
-                {/* Middle: Desktop Links */}
                 <ul className="nav-menu">
                     <li><Link to="/marketplace" className="nav-link">Market Place</Link></li>
                     <li><Link to="/create-listing" className="nav-link">Grow</Link></li>
                     <li><Link to="/my-listings" className="nav-link">My Listings</Link></li>
                 </ul>
 
-                {/* Right: Desktop Actions */}
                 <div className="nav-actions">
                     {user ? (
                         <>
-                            {/* 🔔 Inbox Button */}
                             <button
                                 className="pro-btn pro-btn--icon"
                                 onClick={() => navigate("/messages")}
@@ -174,8 +163,6 @@ const Navbar = () => {
                                 )}
                             </button>
 
-
-
                             <Link
                                 to="/profile"
                                 className="btn-outline btn-icon"
@@ -192,11 +179,6 @@ const Navbar = () => {
                                     <User size={20} />
                                 )}
                             </Link>
-
-                            {/* <button onClick={handleLogout} className="btn-outline">
-                                Logout
-                            </button> */}
-
                         </>
                     ) : (
                         <>
@@ -205,48 +187,25 @@ const Navbar = () => {
                         </>
                     )}
 
-                    {/* 3-bar button */}
                     <button
                         className="nav-burger"
                         aria-label="Open menu"
-                        onClick={() => setMenuOpen(v => !v)}
+                        onClick={() => setMenuOpen((v) => !v)}
                     >
                         {menuOpen ? <X size={22} /> : <Menu size={22} />}
                     </button>
                 </div>
             </div>
 
-            {/* Mobile Menu (unchanged) */}
             <div className={`nav-mobile ${menuOpen ? "nav-mobile--open" : ""}`}>
                 <div className="nav-mobile-inner">
+                    <Link to="/marketplace" className="nav-mobile-link" onClick={closeMenu}>Market Place</Link>
+                    <Link to="/create-listing" className="nav-mobile-link" onClick={closeMenu}>Grow</Link>
+                    <Link to="/my-listings" className="nav-mobile-link" onClick={closeMenu}>My Listings</Link>
 
-                    <Link to="/marketplace" className="nav-mobile-link" onClick={closeMenu}>
-                        Market Place
-                    </Link>
-                    <Link to="/create-listing" className="nav-mobile-link" onClick={closeMenu}>
-                        Grow
-                    </Link>
-                    <Link to="/my-listings" className="nav-mobile-link" onClick={closeMenu}>
-                        My Listings
-                    </Link>
-
-                    {user ? (
+                    {!user && (
                         <>
-                            {/* <Link to="/profile" className="nav-mobile-link" onClick={closeMenu}>
-                                Profile
-                            </Link>
-                            <button
-                                className="nav-mobile-link nav-mobile-btn nav-mobile-logout"
-                                onClick={handleLogout}
-                            >
-                                Logout
-                            </button> */}
-                        </>
-                    ) : (
-                        <>
-                            <Link to="/login" className="nav-mobile-link" onClick={closeMenu}>
-                                Login
-                            </Link>
+                            <Link to="/login" className="nav-mobile-link" onClick={closeMenu}>Login</Link>
                             <Link to="/register" className="nav-mobile-link nav-mobile-cta" onClick={closeMenu}>
                                 Get started
                             </Link>

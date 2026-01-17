@@ -14,10 +14,7 @@ export const chatService = {
                 .single()
         );
 
-        if (fetchError && fetchError.code !== "PGRST116") {
-            throw fetchError;
-        }
-
+        if (fetchError && fetchError.code !== "PGRST116") throw fetchError;
         if (existingChats) return existingChats.id;
 
         const { data: newChat, error: createError } = await withGlobalLoader(
@@ -34,11 +31,7 @@ export const chatService = {
 
     async getMessages(chatId) {
         const { data, error } = await withGlobalLoader(
-            supabase
-                .from("messages")
-                .select("*")
-                .eq("chat_id", chatId)
-                .order("created_at", { ascending: true })
+            supabase.from("messages").select("*").eq("chat_id", chatId).order("created_at", { ascending: true })
         );
         if (error) throw error;
         return data;
@@ -47,6 +40,33 @@ export const chatService = {
     async sendMessage(chatId, senderId, content) {
         const { error } = await withGlobalLoader(
             supabase.from("messages").insert([{ chat_id: chatId, sender_id: senderId, text: content }])
+        );
+        if (error) throw error;
+    },
+
+    async uploadChatImage(file, chatId, senderId) {
+        const ext = file.name.split(".").pop();
+        const fileName = `${chatId}/${senderId}/${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await withGlobalLoader(
+            supabase.storage.from("chat-media").upload(fileName, file, {
+                cacheControl: "3600",
+                upsert: false,
+            })
+        );
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from("chat-media").getPublicUrl(fileName);
+
+        return data.publicUrl;
+    },
+
+    async sendMediaMessage(chatId, senderId, mediaUrl, mediaType = "image") {
+        const { error } = await withGlobalLoader(
+            supabase.from("messages").insert([
+                { chat_id: chatId, sender_id: senderId, text: "", media_url: mediaUrl, media_type: mediaType },
+            ])
         );
         if (error) throw error;
     },

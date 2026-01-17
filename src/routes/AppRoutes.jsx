@@ -11,17 +11,20 @@ import EditListing from "../pages/EditListing";
 import MyDeals from "../pages/MyDeals";
 import Messages from "../pages/Messages";
 import Chat from "../pages/Chat";
-import ProductPage from "../pages/ProductPage"; // ✅ ADD THIS
+import ProductPage from "../pages/ProductPage";
+import SavedItems from "../pages/SavedItems";
+import Settings from "../pages/Settings";
+import Security from "../pages/Security";
+import UserProfile from "../pages/UserProfile";
 import { AuthProvider } from "../context/AuthContext";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Footer from "../components/Footer";
-import GlobalNetworkLoader from "../components/GlobalNetworkLoader";
-
+import PushInitializer from "../components/PushInitializer";
 const AppRoutes = () => {
     return (
         <Router>
             <AuthProvider>
-                <GlobalNetworkLoader />
+                <PushInitializer />
                 <Navbar />
                 <Routes>
                     <Route path="/" element={<Landing />} />
@@ -41,11 +44,15 @@ const AppRoutes = () => {
                         <Route path="/messages" element={<Messages />} />
                         <Route path="/chat/:chatId" element={<Chat />} />
                         <Route path="/profile" element={<Profile />} />
+                        <Route path="/saved" element={<SavedItems />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/security" element={<Security />} />
+                        <Route path="/user/:userId" element={<UserProfile />} />
                     </Route>
                 </Routes>
                 <Footer />
             </AuthProvider>
-        </Router>
+        </Router >
     );
 };
 

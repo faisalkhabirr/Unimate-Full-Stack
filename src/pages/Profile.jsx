@@ -22,6 +22,9 @@ const Profile = () => {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [isEditingBio, setIsEditingBio] = useState(false);
+    const [bioText, setBioText] = useState("");
 
     const [unreadMsgs, setUnreadMsgs] = useState(0);
     const [listingCount, setListingCount] = useState(0);
@@ -50,12 +53,90 @@ const Profile = () => {
         return base.charAt(0).toUpperCase();
     }, [displayName, user]);
 
+    useEffect(() => {
+        if (user?.user_metadata?.bio) {
+            setBioText(user.user_metadata.bio);
+        }
+    }, [user]);
+
     const handleLogout = async () => {
         try {
             await signOut();
             navigate("/");
         } catch (error) {
             console.error("Error signing out:", error);
+        }
+    };
+
+    const handleAvatarClick = () => {
+        document.getElementById("direct-avatar-input").click();
+    };
+
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        try {
+            setUploadingAvatar(true);
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // Update Auth Metadata
+            const { error: authError } = await supabase.auth.updateUser({
+                data: { ...user.user_metadata, avatar_url: publicUrl }
+            });
+            if (authError) throw authError;
+
+            // Sync to Profiles
+            await supabase.from("profiles").upsert({
+                id: user.id,
+                avatar_url: publicUrl,
+                updated_at: new Date()
+            });
+
+            window.location.reload();
+        } catch (error) {
+            console.error("Error uploading avatar:", error);
+            alert("Failed to upload avatar: " + error.message);
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
+    const handleBioSave = async () => {
+        if (!user) return;
+        try {
+            setLoading(true);
+            const { error: authError } = await supabase.auth.updateUser({
+                data: { ...user.user_metadata, bio: bioText.trim() }
+            });
+            if (authError) throw authError;
+
+            // Sync to Profiles
+            await supabase.from("profiles").upsert({
+                id: user.id,
+                bio: bioText.trim(),
+                updated_at: new Date()
+            });
+
+            setIsEditingBio(false);
+            window.location.reload();
+        } catch (error) {
+            console.error("Error saving bio:", error);
+            alert("Failed to save bio");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -127,9 +208,27 @@ const Profile = () => {
                 {/* Header / Hero */}
                 <section className="pro-card pro-hero">
                     <div className="pro-hero__left">
-                        <div className="pro-avatar" aria-hidden="true">
-                            {avatarLetter}
+                        <div
+                            className={`pro-avatar ${uploadingAvatar ? 'uploading' : ''}`}
+                            onClick={handleAvatarClick}
+                            title="Click to change photo"
+                        >
+                            {meta.avatar_url ? (
+                                <img src={meta.avatar_url} alt="" className="pro-avatar-img" />
+                            ) : (
+                                avatarLetter
+                            )}
+                            <div className="pro-avatar-overlay">
+                                <span>{uploadingAvatar ? "..." : "Edit"}</span>
+                            </div>
                         </div>
+                        <input
+                            type="file"
+                            id="direct-avatar-input"
+                            style={{ display: 'none' }}
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                        />
 
                         <div className="pro-identity">
                             <div className="pro-name-row">
@@ -145,6 +244,27 @@ const Profile = () => {
                             </div>
 
                             <p className="pro-email">{user.email}</p>
+
+                            {isEditingBio ? (
+                                <div className="pro-bio-edit-wrap">
+                                    <textarea
+                                        className="pro-bio-textarea"
+                                        value={bioText}
+                                        onChange={(e) => setBioText(e.target.value)}
+                                        placeholder="Add a bio..."
+                                        maxLength={150}
+                                    />
+                                    <div className="pro-bio-edit-actions">
+                                        <button className="pro-bio-btn pro-bio-btn--save" onClick={handleBioSave}>Save</button>
+                                        <button className="pro-bio-btn" onClick={() => setIsEditingBio(false)}>Cancel</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="pro-bio-display-wrap" onClick={() => setIsEditingBio(true)} title="Click to edit bio">
+                                    <p className="pro-bio-text">{meta.bio || "Add a bio..."}</p>
+                                </div>
+                            )}
+
                             <p className="pro-meta">
                                 Joined <span className="pro-dot">•</span> {joinedDate}
                             </p>

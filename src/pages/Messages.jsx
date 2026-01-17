@@ -4,6 +4,19 @@ import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Messages.css";
 
+const pickImage = (image_url) => {
+    if (!image_url) return null;
+
+    // If someone saved an array as JSON text by mistake
+    try {
+        const parsed = JSON.parse(image_url);
+        if (Array.isArray(parsed)) return parsed[0] || null;
+    } catch (_) { }
+
+    // normal string url
+    return image_url;
+};
+
 const Messages = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -12,9 +25,11 @@ const Messages = () => {
 
     useEffect(() => {
         if (user) fetchConversations();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const fetchConversations = async () => {
+        setLoading(true);
         try {
             const { data: chats, error } = await supabase
                 .from("chats")
@@ -24,6 +39,7 @@ const Messages = () => {
           buyer_id,
           seller_id,
           listing:listings (
+            id,
             title,
             image_url,
             price
@@ -55,14 +71,14 @@ const Messages = () => {
                         ...chat,
                         lastMessage,
                         unreadCount: unreadCount || 0,
-                        isUnread: (unreadCount || 0) > 0
+                        isUnread: (unreadCount || 0) > 0,
                     };
                 })
             );
 
             setConversations(enriched);
         } catch (err) {
-            console.error(err.message);
+            console.error("Messages fetch error:", err.message);
         } finally {
             setLoading(false);
         }
@@ -77,52 +93,53 @@ const Messages = () => {
             {conversations.length === 0 ? (
                 <div className="empty-state">
                     <p>No messages yet.</p>
-                    <p className="empty-hint">
-                        Browse listings to start chatting.
-                    </p>
-                    <button onClick={() => navigate("/marketplace")}>
-                        Browse Marketplace
-                    </button>
+                    <p className="empty-hint">Browse listings to start chatting.</p>
+                    <button onClick={() => navigate("/marketplace")}>Browse Marketplace</button>
                 </div>
             ) : (
                 <div className="conversations-list">
-                    {conversations.map((conv) => (
-                        <div
-                            key={conv.id}
-                            className={`conversation-card ${conv.isUnread ? "unread" : ""}`}
-                            onClick={() => navigate(`/chat/${conv.id}`)}
-                        >
-                            <div className="conv-image">
-                                {conv.listing && (
-                                    <img
-                                        src={conv.listing.image_url}
-                                        alt={conv.listing.title}
-                                    />
-                                )}
-                            </div>
+                    {conversations.map((conv) => {
+                        const img = pickImage(conv.listing?.image_url);
 
-                            <div className="conv-content">
-                                <div className="conv-header">
-                                    <h3>{conv.listing?.title || "Unknown Item"}</h3>
-                                    {conv.isUnread && (
-                                        <span className="unread-badge">
-                                            {conv.unreadCount}
-                                        </span>
+                        return (
+                            <div
+                                key={conv.id}
+                                className={`conversation-card ${conv.isUnread ? "unread" : ""}`}
+                                onClick={() => navigate(`/chat/${conv.id}`)}
+                            >
+                                <div className="conv-image">
+                                    {img ? (
+                                        <img src={img} alt={conv.listing?.title || "Listing"} />
+                                    ) : (
+                                        <div className="conv-image-fallback">No Image</div>
                                     )}
                                 </div>
 
-                                <p className="conv-preview">
-                                    {conv.lastMessage?.text || "No messages yet"}
-                                </p>
+                                <div className="conv-content">
+                                    <div className="conv-header">
+                                        <h3>{conv.listing?.title || "Unknown Item"}</h3>
 
-                                <span className="conv-time">
-                                    {new Date(
-                                        conv.lastMessage?.created_at || conv.created_at
-                                    ).toLocaleDateString()}
-                                </span>
+                                        {conv.isUnread && (
+                                            <span className="unread-badge">{conv.unreadCount}</span>
+                                        )}
+                                    </div>
+
+                                    <p className="conv-preview">
+                                        {conv.lastMessage?.text || "No messages yet"}
+                                    </p>
+
+                                    <div className="conv-meta">
+                                        <span className="conv-price">
+                                            {conv.listing?.price != null ? `$${conv.listing.price}` : ""}
+                                        </span>
+                                        <span className="conv-time">
+                                            {new Date(conv.lastMessage?.created_at || conv.created_at).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

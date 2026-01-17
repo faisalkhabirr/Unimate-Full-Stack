@@ -3,37 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import { chatService } from "../services/chatService";
-// import ProductModal from "../components/ProductModal";
 import "../styles/Marketplace.css";
 
-/**
- * NOTE:
- * - Filters work best if your listings table has some of these columns:
- *   - in_stock (boolean) OR stock (number)
- *   - category OR product_type (string)
- *   - color (string), material (string), size (string)
- *
- * If they don't exist, UI still renders and filtering gracefully falls back.
- */
+const PLACEHOLDER_IMG =
+    "https://via.placeholder.com/400x300/f7f8f9/636e72?text=No+Image";
 
 const Marketplace = () => {
     const [listings, setListings] = useState([]);
-    // const [selectedListing, setSelectedListing] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // keep your search bar section
     const [searchQuery, setSearchQuery] = useState("");
-
-    // collection-style UI controls
     const [filtersOpen, setFiltersOpen] = useState(true);
-    const [sort, setSort] = useState("rating"); // UI says "Sort by average rating" like screenshot
+    const [sort, setSort] = useState("rating");
 
-    // filters
     const [inStock, setInStock] = useState(false);
     const [outOfStock, setOutOfStock] = useState(false);
 
-    const [selectedTypes, setSelectedTypes] = useState(new Set()); // product types
+    const [selectedTypes, setSelectedTypes] = useState(new Set());
     const [selectedColors, setSelectedColors] = useState(new Set());
     const [selectedMaterials, setSelectedMaterials] = useState(new Set());
     const [selectedSizes, setSelectedSizes] = useState(new Set());
@@ -49,9 +36,16 @@ const Marketplace = () => {
     const fetchListings = async () => {
         try {
             setLoading(true);
+
+            // ✅ professional fetch: include categories + images
             const { data, error } = await supabase
                 .from("listings")
-                .select("*")
+                .select(`
+                    *,
+                    categories ( id, name, slug ),
+                    listing_images ( image_url, is_primary, sort_order )
+                `)
+                .eq("status", "active")
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
@@ -88,23 +82,33 @@ const Marketplace = () => {
         }
     };
 
-    // Helpers to read optional fields safely
-    const getType = (item) =>
-        (item.product_type || item.category || item.type || "").toString().trim();
+    // ✅ image helper (primary -> any -> legacy image_url -> placeholder)
+    const getPrimaryImage = (item) => {
+        const imgs = Array.isArray(item.listing_images) ? item.listing_images : [];
+        const primary = imgs.find((x) => x?.is_primary) || imgs[0];
+        return primary?.image_url || item.image_url || PLACEHOLDER_IMG;
+    };
 
-    const getColor = (item) => (item.color || "").toString().trim();
-    const getMaterial = (item) => (item.material || "").toString().trim();
-    const getSize = (item) => (item.size || "").toString().trim();
+    // ✅ Helpers now read from professional schema
+    const getType = (item) =>
+        (item?.categories?.name || "").toString().trim();
+
+    const getAttr = (item, key) => {
+        const attrs = item?.attributes && typeof item.attributes === "object" ? item.attributes : {};
+        const v = attrs?.[key];
+        return (v ?? "").toString().trim();
+    };
+
+    const getColor = (item) => getAttr(item, "color");
+    const getMaterial = (item) => getAttr(item, "material");
+    const getSize = (item) => getAttr(item, "size");
 
     const isItemInStock = (item) => {
-        // supports boolean in_stock OR numeric stock
         if (typeof item.in_stock === "boolean") return item.in_stock;
         if (typeof item.stock === "number") return item.stock > 0;
-        // if unknown, treat as in stock so items don't disappear unexpectedly
         return true;
     };
 
-    // Build filter options from listings
     const filterOptions = useMemo(() => {
         const typeCount = new Map();
         const colorCount = new Map();
@@ -156,12 +160,10 @@ const Marketplace = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [listings]);
 
-    // Price range state (initialized once we know bounds)
     const [priceMin, setPriceMin] = useState(0);
     const [priceMax, setPriceMax] = useState(0);
 
     useEffect(() => {
-        // only set initial bounds when listings load
         setPriceMin(filterOptions.priceMin);
         setPriceMax(filterOptions.priceMax);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,7 +188,6 @@ const Marketplace = () => {
         });
     };
 
-    // Main filtered listings (search + all filters + sort)
     const filteredListings = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
 
@@ -195,19 +196,16 @@ const Marketplace = () => {
             const desc = (item.description || "").toLowerCase();
             const matchesSearch = !q || title.includes(q) || desc.includes(q);
 
-            // availability
             const stockStatus = isItemInStock(item);
             const matchesStock =
                 (!inStock && !outOfStock) ||
                 (inStock && stockStatus) ||
                 (outOfStock && !stockStatus);
 
-            // product type
             const t = getType(item);
             const matchesType =
                 selectedTypes.size === 0 || (t && selectedTypes.has(t));
 
-            // color/material/size
             const c = getColor(item);
             const m = getMaterial(item);
             const s = getSize(item);
@@ -219,7 +217,6 @@ const Marketplace = () => {
             const matchesSize =
                 selectedSizes.size === 0 || (s && selectedSizes.has(s));
 
-            // price
             const p = Number(item.price || 0);
             const matchesPrice =
                 Number.isNaN(p) ? true : p >= priceMin && p <= priceMax;
@@ -235,12 +232,10 @@ const Marketplace = () => {
             );
         });
 
-        // sort (rating-like UI; your DB probably doesn't have rating so we fall back)
         if (sort === "price_low") arr.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
         if (sort === "price_high") arr.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
         if (sort === "latest") arr.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
-        // "rating" sort fallback: if item.rating exists, use it; otherwise keep current (latest from query)
         if (sort === "rating") {
             const hasRating = arr.some((x) => x.rating != null);
             if (hasRating) arr.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
@@ -291,8 +286,6 @@ const Marketplace = () => {
 
     return (
         <div className="marketplace-container mp-page">
-            {/* =========================Search hero section (restyled minimalist)
-      ========================== */}
             <section className="mp-hero-min">
                 <div className="mp-hero-min__inner">
                     <div className="mp-hero-min__text">
@@ -314,9 +307,6 @@ const Marketplace = () => {
                 </div>
             </section>
 
-            {/* =========================
-          Advertisement section (restyled to match screenshots)
-      ========================== */}
             <section className="mp-ad-min">
                 <div className="mp-ad-min__inner">
                     <div className="mp-ad-min__left">
@@ -335,9 +325,6 @@ const Marketplace = () => {
                 </div>
             </section>
 
-            {/* =========================
-          Sidebar filters + top toolbar + grid
-      ========================== */}
             <section className="mp-collection">
                 <div className="mp-collection__toolbar">
                     <button
@@ -386,7 +373,6 @@ const Marketplace = () => {
                 </div>
 
                 <div className={`mp-collection__body ${filtersOpen ? "" : "no-filters"}`}>
-                    {/* LEFT FILTERS */}
                     {filtersOpen && (
                         <aside className="mp-filters">
                             <div className="mp-filters__head">
@@ -396,7 +382,6 @@ const Marketplace = () => {
                                 </button>
                             </div>
 
-                            {/* Availability */}
                             <div className="mp-filterblock">
                                 <h4>Availability</h4>
 
@@ -421,7 +406,6 @@ const Marketplace = () => {
                                 </label>
                             </div>
 
-                            {/* Product Type */}
                             <div className="mp-filterblock">
                                 <h4>Product Type</h4>
 
@@ -435,8 +419,7 @@ const Marketplace = () => {
                                             <button
                                                 key={t}
                                                 type="button"
-                                                className={`mp-optionrow ${selectedTypes.has(t) ? "is-active" : ""
-                                                    }`}
+                                                className={`mp-optionrow ${selectedTypes.has(t) ? "is-active" : ""}`}
                                                 onClick={() => toggleSetValue(setSelectedTypes, t)}
                                                 title={t}
                                             >
@@ -447,7 +430,6 @@ const Marketplace = () => {
                                 )}
                             </div>
 
-                            {/* Price */}
                             <div className="mp-filterblock">
                                 <h4>Price</h4>
 
@@ -494,7 +476,6 @@ const Marketplace = () => {
                                 </div>
                             </div>
 
-                            {/* Color */}
                             <div className="mp-filterblock">
                                 <h4>Color</h4>
 
@@ -508,8 +489,7 @@ const Marketplace = () => {
                                             <button
                                                 key={c}
                                                 type="button"
-                                                className={`mp-optionrow ${selectedColors.has(c) ? "is-active" : ""
-                                                    }`}
+                                                className={`mp-optionrow ${selectedColors.has(c) ? "is-active" : ""}`}
                                                 onClick={() => toggleSetValue(setSelectedColors, c)}
                                                 title={c}
                                             >
@@ -520,7 +500,6 @@ const Marketplace = () => {
                                 )}
                             </div>
 
-                            {/* Material */}
                             <div className="mp-filterblock">
                                 <h4>Material</h4>
 
@@ -534,8 +513,7 @@ const Marketplace = () => {
                                             <button
                                                 key={m}
                                                 type="button"
-                                                className={`mp-optionrow ${selectedMaterials.has(m) ? "is-active" : ""
-                                                    }`}
+                                                className={`mp-optionrow ${selectedMaterials.has(m) ? "is-active" : ""}`}
                                                 onClick={() => toggleSetValue(setSelectedMaterials, m)}
                                                 title={m}
                                             >
@@ -546,7 +524,6 @@ const Marketplace = () => {
                                 )}
                             </div>
 
-                            {/* Size */}
                             <div className="mp-filterblock">
                                 <h4>Size</h4>
 
@@ -560,8 +537,7 @@ const Marketplace = () => {
                                             <button
                                                 key={s}
                                                 type="button"
-                                                className={`mp-optionrow ${selectedSizes.has(s) ? "is-active" : ""
-                                                    }`}
+                                                className={`mp-optionrow ${selectedSizes.has(s) ? "is-active" : ""}`}
                                                 onClick={() => toggleSetValue(setSelectedSizes, s)}
                                                 title={s}
                                             >
@@ -574,7 +550,6 @@ const Marketplace = () => {
                         </aside>
                     )}
 
-                    {/* RIGHT GRID */}
                     <div className="mp-gridwrap">
                         {filteredListings.length === 0 ? (
                             <div className="empty-state">
@@ -591,11 +566,7 @@ const Marketplace = () => {
                                             onClick={() => navigate(`/product/${item.id}`, { state: { listing: item } })}
                                             aria-label={`Open details for ${item.title}`}
                                         >
-                                            {item.image_url ? (
-                                                <img src={item.image_url} alt={item.title} loading="lazy" />
-                                            ) : (
-                                                <div className="mp-noimg">📷</div>
-                                            )}
+                                            <img src={getPrimaryImage(item)} alt={item.title} loading="lazy" />
                                         </button>
 
                                         <div className="mp-card__info">
@@ -612,26 +583,6 @@ const Marketplace = () => {
                                             </button>
 
                                             <div className="mp-card__price">${item.price}</div>
-
-                                            {/* <div className="mp-card__actions">
-                                                <button
-                                                    className="mp-actionbtn"
-                                                    type="button"
-                                                    onClick={() => setSelectedListing(item)}
-                                                >
-                                                    Details
-                                                </button>
-
-                                                {user && user.id !== item.seller_id && (
-                                                    <button
-                                                        className="mp-actionbtn mp-actionbtn--primary"
-                                                        type="button"
-                                                        onClick={() => handleMessage(item)}
-                                                    >
-                                                        Message
-                                                    </button>
-                                                )}
-                                            </div> */}
                                         </div>
                                     </article>
                                 ))}
@@ -640,13 +591,6 @@ const Marketplace = () => {
                     </div>
                 </div>
             </section>
-
-            {/* {selectedListing && (
-                <ProductModal
-                    listing={selectedListing}
-                    onClose={() => setSelectedListing(null)}
-                />
-            )} */}
         </div>
     );
 };

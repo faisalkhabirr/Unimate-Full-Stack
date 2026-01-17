@@ -2,7 +2,6 @@
   width: 100%;
   border-bottom: 1px solid #eaeaea;
   background: #fff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -34,7 +33,7 @@
   text-decoration: none;
 } */
 
-.logo-icon {}
+/* .logo-icon {} */
 
 .logo-icon img {
   height: 60px;

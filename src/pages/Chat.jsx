@@ -5,11 +5,21 @@ import { useAuth } from "../context/AuthContext";
 import { chatService } from "../services/chatService";
 import "../styles/Chat.css";
 
+const pickImage = (image_url) => {
+    if (!image_url) return null;
+    try {
+        const parsed = JSON.parse(image_url);
+        if (Array.isArray(parsed)) return parsed[0] || null;
+    } catch (_) { }
+    return image_url;
+};
+
 const Chat = () => {
     const { chatId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
     const messagesEndRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
@@ -17,13 +27,18 @@ const Chat = () => {
     const [deal, setDeal] = useState(null);
     const [chatInfo, setChatInfo] = useState(null);
     const [sending, setSending] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     const isSeller = useMemo(() => {
         if (!user || !chatInfo) return false;
         return user.id === chatInfo.seller_id;
     }, [user, chatInfo]);
 
-    // Scroll to bottom helper
+    const otherUserId = useMemo(() => {
+        if (!user || !chatInfo) return null;
+        return isSeller ? chatInfo.buyer_id : chatInfo.seller_id;
+    }, [user, chatInfo, isSeller]);
+
     const scrollToBottom = (behavior = "smooth") => {
         messagesEndRef.current?.scrollIntoView({ behavior });
     };
@@ -37,7 +52,7 @@ const Chat = () => {
         scrollToBottom();
     }, [messages]);
 
-    // ✅ Mark messages as read (makes inbox badge truly functional)
+    // ✅ Mark as read (also helps navbar badge drop instantly)
     const markChatAsRead = async () => {
         if (!user || !chatId) return;
 
@@ -49,21 +64,21 @@ const Chat = () => {
             .eq("is_read", false);
     };
 
+    const [profiles, setProfiles] = useState({}); // map of userId -> profile data
+
     useEffect(() => {
         if (!user) return;
 
         const fetchChatInfo = async () => {
             const { data: chat, error } = await supabase
                 .from("chats")
-                .select(
-                    `
-          id,
-          created_at,
-          buyer_id,
-          seller_id,
-          listings (id, title, price, image_url)
-        `
-                )
+                .select(`
+                  id,
+                  created_at,
+                  buyer_id,
+                  seller_id,
+                  listings (id, title, price, image_url)
+                `)
                 .eq("id", chatId)
                 .single();
 
@@ -74,6 +89,24 @@ const Chat = () => {
             }
 
             setChatInfo(chat);
+
+            // Fetch profiles for both parties
+            const profileIds = [chat.buyer_id, chat.seller_id];
+            try {
+                const { data: profileList } = await supabase
+                    .from("profiles")
+                    .select("id, full_name, avatar_url")
+                    .in("id", profileIds);
+
+                if (profileList) {
+                    const profileMap = {};
+                    profileList.forEach(p => { profileMap[p.id] = p; });
+                    setProfiles(profileMap);
+                }
+            } catch (err) {
+                console.warn("Could not load profiles for avatars:", err);
+            }
+
             setLoading(false);
         };
 
@@ -81,16 +114,13 @@ const Chat = () => {
             try {
                 const dealData = await chatService.getDeal(chatId);
                 setDeal(dealData);
-            } catch (e) {
-                // no deal => ignore
-            }
+            } catch (_) { }
         };
 
         const loadMessages = async () => {
             try {
                 const msgs = await chatService.getMessages(chatId);
                 setMessages(msgs || []);
-                // ✅ after loading, mark as read
                 await markChatAsRead();
             } catch (error) {
                 console.error("Error loading messages:", error);
@@ -101,7 +131,7 @@ const Chat = () => {
         loadDeal();
         loadMessages();
 
-        // ✅ Realtime (INSERT). Also mark read when new incoming arrives while you're in chat
+        // ✅ Realtime new messages
         const channel = supabase
             .channel(`chat:${chatId}`)
             .on(
@@ -115,26 +145,32 @@ const Chat = () => {
                 async (payload) => {
                     const incoming = payload.new;
 
-                    // prevent duplicates (sometimes happens if you also load messages)
                     setMessages((prev) => {
                         if (prev.some((m) => m.id === incoming.id)) return prev;
                         return [...prev, incoming];
                     });
 
-                    // ✅ if it's not mine, instantly mark it read (since I'm currently viewing)
-                    if (user && incoming.sender_id !== user.id) {
+                    // if it's not mine, mark read instantly while viewing
+                    if (incoming.sender_id !== user.id) {
                         await markChatAsRead();
                     }
                 }
             )
             .subscribe();
 
+        // ✅ When tab becomes active again, mark read again (good for mobile/alt-tab)
+        const onVis = () => {
+            if (document.visibilityState === "visible") markChatAsRead();
+        };
+        document.addEventListener("visibilitychange", onVis);
+
         return () => {
             supabase.removeChannel(channel);
+            document.removeEventListener("visibilitychange", onVis);
         };
     }, [chatId, user, navigate]);
 
-    const handleSend = async (e) => {
+    const handleSendText = async (e) => {
         e.preventDefault();
         if (!newMessage.trim() || !user) return;
 
@@ -144,8 +180,6 @@ const Chat = () => {
             setSending(true);
             await chatService.sendMessage(chatId, user.id, text);
             setNewMessage("");
-            // realtime will append it, but if realtime is slow, you can optimistically add:
-            // setMessages(prev => [...prev, { id: `tmp-${Date.now()}`, text, sender_id: user.id, created_at: new Date().toISOString() }]);
         } catch (error) {
             console.error("Error sending message:", error);
         } finally {
@@ -153,9 +187,55 @@ const Chat = () => {
         }
     };
 
+    const handlePickImage = () => {
+        if (uploading) return;
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = ""; // allow selecting same file again later
+
+        if (!file || !user) return;
+
+        const isVideo = file.type.startsWith("video/");
+        const isImage = file.type.startsWith("image/");
+
+        if (!isImage && !isVideo) {
+            alert("Only image and video files are allowed.");
+            return;
+        }
+
+        // Limits: 6MB for images, 20MB for videos
+        const maxMB = isVideo ? 20 : 6;
+        if (file.size > maxMB * 1024 * 1024) {
+            alert(`${isVideo ? "Video" : "Image"} is too large. Max ${maxMB}MB.`);
+            return;
+        }
+
+        try {
+            setUploading(true);
+
+            // 1) upload to storage (Bucket: chat-media)
+            const publicUrl = await chatService.uploadChatImage(file, chatId, user.id);
+
+            // 2) insert message row with media_url
+            const mediaType = isVideo ? "video" : "image";
+            await chatService.sendMediaMessage(chatId, user.id, publicUrl, mediaType);
+
+            console.log("Chat media uploaded successfully:", publicUrl);
+        } catch (err) {
+            console.error("Upload/send media error:", err);
+            const msg = err.message || "Failed to upload file.";
+            alert(`Upload Error: ${msg}\n\nMake sure you have a public bucket named 'chat-media' with correct policies.`);
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleMarkSold = async () => {
         if (!chatInfo || !user) return;
-        if (!window.confirm("Are you sure you want to mark this item as SOLD to this buyer?")) return;
+        if (!window.confirm("Mark as SOLD to this buyer?")) return;
 
         try {
             const newDeal = await chatService.createDeal(
@@ -180,19 +260,37 @@ const Chat = () => {
 
     if (loading) return <div className="chat-loading">Loading conversation…</div>;
 
+    const listingThumb = pickImage(chatInfo?.listings?.image_url);
+
     return (
         <div className="chat-page">
-            <div className="chat-container">
+            <div className="chat-shell">
                 {/* Header */}
                 <div className="chat-header">
                     <button className="chat-back" onClick={() => navigate(-1)} aria-label="Back">
                         ←
                     </button>
 
-                    <div className="chat-listing-info">
+                    {/* Click title area → go product page */}
+                    <div
+                        className="chat-listing"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                            const id = chatInfo?.listings?.id;
+                            if (id) navigate(`/product/${id}`);
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                const id = chatInfo?.listings?.id;
+                                if (id) navigate(`/product/${id}`);
+                            }
+                        }}
+                        title="Open product"
+                    >
                         <div className="chat-thumb">
-                            {chatInfo?.listings?.image_url ? (
-                                <img src={chatInfo.listings.image_url} alt="Item" />
+                            {listingThumb ? (
+                                <img src={listingThumb} alt="Item" />
                             ) : (
                                 <div className="chat-thumb-fallback" />
                             )}
@@ -203,13 +301,38 @@ const Chat = () => {
                                 {chatInfo?.listings?.title || "Item Chat"}
                             </div>
                             <div className="chat-subline">
-                                <span className="chat-item-price">${chatInfo?.listings?.price}</span>
+                                <span className="chat-item-price">
+                                    {chatInfo?.listings?.price != null ? `$${chatInfo.listings.price}` : ""}
+                                </span>
                                 {deal && <span className="chat-sold-pill">Sold</span>}
                             </div>
                         </div>
                     </div>
 
-                    {/* Deal Action Button */}
+                    {/* Clickable participant info */}
+                    {otherUserId && (
+                        <button
+                            className="chat-participant-btn"
+                            onClick={() => navigate(`/user/${otherUserId}`)}
+                            title="View profile"
+                        >
+                            <div className="chat-participant-avatar">
+                                {profiles[otherUserId]?.avatar_url ? (
+                                    <img
+                                        src={profiles[otherUserId].avatar_url}
+                                        alt="Avatar"
+                                        className="chat-header-avatar-img"
+                                    />
+                                ) : (
+                                    (isSeller ? "B" : "S")
+                                )}
+                            </div>
+                            <span>
+                                {profiles[otherUserId]?.full_name || (isSeller ? "Buyer" : "Seller")}
+                            </span>
+                        </button>
+                    )}
+
                     <div className="chat-actions">
                         {deal ? (
                             <div className="deal-status">✅ Sold</div>
@@ -223,18 +346,53 @@ const Chat = () => {
                     </div>
                 </div>
 
-                {/* Messages Area */}
+                {/* Messages */}
                 <div className="chat-messages">
                     {messages.map((msg) => {
                         const isOwn = msg.sender_id === user.id;
+                        const isImage = msg.media_type === "image" && msg.media_url;
+                        const isVideo = msg.media_type === "video" && msg.media_url;
+                        const isMedia = isImage || isVideo;
+                        const senderProfile = profiles[msg.sender_id];
 
                         return (
-                            <div
-                                key={msg.id}
-                                className={`message-row ${isOwn ? "message-own" : "message-other"}`}
-                            >
-                                <div className="message-bubble">
-                                    <div className="message-text">{msg.text}</div>
+                            <div key={msg.id} className={`message-row ${isOwn ? "own" : "other"}`}>
+                                {!isOwn && (
+                                    <div className="message-avatar-wrap">
+                                        {senderProfile?.avatar_url ? (
+                                            <img src={senderProfile.avatar_url} alt="" className="message-avatar" />
+                                        ) : (
+                                            <div className="message-avatar-fallback">
+                                                {(senderProfile?.full_name || "U").charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className={`message-bubble ${isMedia ? "media" : ""}`}>
+                                    {isImage ? (
+                                        <a
+                                            className="msg-media-link"
+                                            href={msg.media_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            title="Open image"
+                                        >
+                                            <img className="msg-media" src={msg.media_url} alt="Sent media" />
+                                        </a>
+                                    ) : isVideo ? (
+                                        <div className="msg-video-wrap">
+                                            <video
+                                                className="msg-video"
+                                                src={msg.media_url}
+                                                controls
+                                                preload="metadata"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="message-text">{msg.text}</div>
+                                    )}
+
                                     <div className="message-time">
                                         {new Date(msg.created_at).toLocaleTimeString([], {
                                             hour: "2-digit",
@@ -245,11 +403,31 @@ const Chat = () => {
                             </div>
                         );
                     })}
+
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area */}
-                <form onSubmit={handleSend} className="chat-input-area">
+                {/* Input */}
+                <form onSubmit={handleSendText} className="chat-input-area">
+                    <input
+                        type="file"
+                        accept="image/*,video/*"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        style={{ display: "none" }}
+                    />
+
+                    <button
+                        type="button"
+                        className="btn-attach"
+                        onClick={handlePickImage}
+                        disabled={uploading}
+                        title="Send image"
+                        aria-label="Send image"
+                    >
+                        {uploading ? "…" : "📷"}
+                    </button>
+
                     <input
                         type="text"
                         value={newMessage}
@@ -257,7 +435,12 @@ const Chat = () => {
                         placeholder="Type a message…"
                         className="chat-input"
                     />
-                    <button type="submit" className="btn-send" disabled={sending || !newMessage.trim()}>
+
+                    <button
+                        type="submit"
+                        className="btn-send"
+                        disabled={sending || uploading || !newMessage.trim()}
+                    >
                         {sending ? "Sending…" : "Send"}
                     </button>
                 </form>

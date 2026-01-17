@@ -37,50 +37,147 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.2rem;
-    gap: 1rem;
+    padding: 1.5rem;
+    gap: 1.5rem;
 }
 
 .pro-hero__left {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    align-items: flex-start;
+    gap: 1.5rem;
     min-width: 0;
+    flex: 1;
 }
 
 .pro-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 999px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
     display: grid;
     place-items: center;
     font-weight: 800;
-    color: #0f172a;
-    background: rgba(231, 178, 47, 0.2);
-    border: 1px solid rgba(231, 178, 47, 0.35);
+    font-size: 1.5rem;
+    color: #4a5568;
+    background: #edf2f7;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.pro-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pro-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.pro-avatar:hover .pro-avatar-overlay {
+    opacity: 1;
+}
+
+.pro-avatar.uploading .pro-avatar-overlay {
+    opacity: 1;
 }
 
 .pro-identity {
     min-width: 0;
+    flex: 1;
 }
 
 .pro-name-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.8rem;
     flex-wrap: wrap;
+    margin-bottom: 4px;
 }
 
 .pro-name {
-    font-size: 1.15rem;
-    line-height: 1.2;
+    font-size: 1.4rem;
+    font-weight: 900;
     margin: 0;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+}
+
+.pro-bio-display-wrap {
+    cursor: pointer;
+    margin: 8px 0;
+}
+
+.pro-bio-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #4a5568;
+    margin: 0;
+    transition: color 0.2s;
+}
+
+.pro-bio-display-wrap:hover .pro-bio-text {
+    color: #1a202c;
+}
+
+.pro-bio-edit-wrap {
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 400px;
+}
+
+.pro-bio-textarea {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+}
+
+.pro-bio-textarea:focus {
+    border-color: var(--pro-accent);
+}
+
+.pro-bio-edit-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.pro-bio-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+.pro-bio-btn--save {
+    background: var(--pro-accent);
+    border-color: var(--pro-accent);
 }
 
 .pro-pill {
     font-size: 0.78rem;
-    padding: 0.28rem 0.55rem;
+    padding: 0.28rem 0.65rem;
     border-radius: 999px;
     border: 1px solid var(--pro-border);
     background: #fff;
@@ -94,14 +191,14 @@
 }
 
 .pro-email {
-    margin: 0.25rem 0 0.1rem;
+    margin: 0;
     color: var(--pro-muted);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     word-break: break-word;
 }
 
 .pro-meta {
-    margin: 0;
+    margin: 8px 0 0;
     color: var(--pro-muted);
     font-size: 0.85rem;
 }
