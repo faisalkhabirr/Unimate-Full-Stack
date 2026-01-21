@@ -1,39 +1,43 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import { useAuth } from '../context/AuthContext';
-import '../styles/Auth.css';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../supabaseClient";
+import { useAuth } from "../context/AuthContext";
+import "../styles/Auth.css";
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState('');
+    const [errorMsg, setErrorMsg] = useState("");
 
     const navigate = useNavigate();
     const { user } = useAuth();
 
-    // If user is already logged in, redirect to marketplace
     useEffect(() => {
-        if (user) {
-            navigate('/marketplace');
-        }
+        if (user) navigate("/marketplace", { replace: true });
     }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setErrorMsg('');
+        setErrorMsg("");
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (error) throw error;
 
-            // Conversion happens automatically via AuthContext listener -> redirect via useEffect
+            // ✅ Navigate immediately (helps on mobile)
+            if (data?.session) {
+                navigate("/marketplace", { replace: true });
+            } else {
+                // fallback
+                const { data: s } = await supabase.auth.getSession();
+                if (s?.session) navigate("/marketplace", { replace: true });
+            }
         } catch (error) {
             setErrorMsg(error.message);
         } finally {
@@ -75,13 +79,15 @@ const Login = () => {
                     </div>
 
                     <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                        {loading ? 'Logging in...' : 'Login'}
+                        {loading ? "Logging in..." : "Login"}
                     </button>
                 </form>
 
                 <p className="auth-footer">
-                    <Link to="/forgot-password" style={{ display: 'block', marginBottom: '10px' }}>Forgot Password?</Link>
-                    Don't have an account? <Link to="/register">Sign up here</Link>
+                    <Link to="/forgot-password" style={{ display: "block", marginBottom: "10px" }}>
+                        Forgot Password?
+                    </Link>
+                    Don&apos;t have an account? <Link to="/register">Sign up here</Link>
                 </p>
             </div>
         </div>
