@@ -18,6 +18,7 @@ import Security from "../pages/Security";
 import UserProfile from "../pages/UserProfile";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
+import AdminPanel from "../pages/AdminPanel";
 import { AuthProvider } from "../context/AuthContext";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Footer from "../components/Footer";
@@ -52,6 +53,7 @@ const AppRoutes = () => {
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/security" element={<Security />} />
                         <Route path="/user/:userId" element={<UserProfile />} />
+                        <Route path="/admin" element={<AdminPanel />} />
                     </Route>
                 </Routes>
                 <Footer />

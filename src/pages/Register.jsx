@@ -70,6 +70,23 @@ const Register = () => {
         }
     };
 
+    const handleGoogleSignIn = async () => {
+        try {
+            setLoading(true);
+            setErrorMsg('');
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/marketplace`
+                }
+            });
+            if (error) throw error;
+        } catch (error) {
+            setErrorMsg(error.message);
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="auth-container">
             <div className="auth-box">
@@ -131,6 +148,20 @@ const Register = () => {
                         {loading ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
+
+                <div className="auth-divider">
+                    <span>or continue with</span>
+                </div>
+
+                <button 
+                    onClick={handleGoogleSignIn} 
+                    className="google-btn" 
+                    disabled={loading}
+                    type="button"
+                >
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
+                    Sign in with Google
+                </button>
 
                 <p className="auth-footer">
                     Already have an account? <Link to="/login">Login here</Link>
