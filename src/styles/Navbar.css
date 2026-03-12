@@ -354,8 +354,8 @@
 
 /* Optional: avatar size if you need it */
 .profile-avatar {
-  width: 32px;
-  height: 32px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -366,21 +366,41 @@
 
 /* Messenger-style transparent icon */
 .pro-btn--icon {
-  width: 42px;
-  height: 42px;
+  width: 45px;
+  height: 45px;
   padding: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background: transparent;
   overflow: visible;
+  position: relative;
 }
 
 .messenger-icon {
-  width: 22px;
-  height: 22px;
-  color: #111;
+  width: 45px;
+  height: 45px;
+  color: #c79e18;
   /* adapts to your theme */
+}
+
+.pro-btn-badge {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  background-color: #e74c3c;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  pointer-events: none;
 }
 
 /* hover effect (optional but nice) */
