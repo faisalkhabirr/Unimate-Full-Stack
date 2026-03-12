@@ -15,11 +15,12 @@ import {
     faPlus,
     faUserPen,
     faShieldHalved,
-    faRightFromBracket
+    faRightFromBracket,
+    faUserGear
 } from "@fortawesome/free-solid-svg-icons";
 
 const Profile = () => {
-    const { user, signOut } = useAuth();
+    const { user, signOut, isAdmin } = useAuth();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
@@ -316,6 +317,16 @@ const Profile = () => {
                             <FontAwesomeIcon icon={faPlus} />
                             Create Listing
                         </button>
+
+                        {isAdmin && (
+                            <button
+                                className="pro-btn pro-btn--admin"
+                                onClick={() => navigate("/admin")}
+                            >
+                                <FontAwesomeIcon icon={faUserGear} />
+                                Admin Panel
+                            </button>
+                        )}
                     </div>
                 </section>
 
