@@ -11,7 +11,9 @@ const pickImage = (image_url) => {
     try {
         const parsed = JSON.parse(image_url);
         if (Array.isArray(parsed)) return parsed[0] || null;
-    } catch (_) { }
+    } catch {
+        // failed to parse, not an array
+    }
 
     // normal string url
     return image_url;
@@ -76,7 +78,8 @@ const Messages = () => {
                 })
             );
 
-            setConversations(enriched);
+            const filtered = enriched.filter(conv => conv.lastMessage);
+            setConversations(filtered);
         } catch (err) {
             console.error("Messages fetch error:", err.message);
         } finally {

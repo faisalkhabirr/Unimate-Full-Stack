@@ -11,7 +11,9 @@ const pickImage = (image_url) => {
     try {
         const parsed = JSON.parse(image_url);
         if (Array.isArray(parsed)) return parsed[0] || null;
-    } catch (_) { }
+    } catch {
+        // ignore JSON parse errors
+    }
     return image_url;
 };
 
@@ -29,6 +31,13 @@ const Chat = () => {
     const [chatInfo, setChatInfo] = useState(null);
     const [sending, setSending] = useState(false);
     const [uploading, setUploading] = useState(false);
+
+    // Edit state
+    const [editingId, setEditingId] = useState(null);
+    const [editingText, setEditingText] = useState("");
+
+    // Lightbox state
+    const [lightboxImage, setLightboxImage] = useState(null);
 
     // Modal state
     const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "info", onConfirm: null });
@@ -49,7 +58,7 @@ const Chat = () => {
 
     useEffect(() => {
         scrollToBottom("auto");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // initial load scroll
     }, []);
 
     useEffect(() => {
@@ -118,7 +127,9 @@ const Chat = () => {
             try {
                 const dealData = await chatService.getDeal(chatId);
                 setDeal(dealData);
-            } catch (_) { }
+            } catch {
+                // ignore if no deal
+            }
         };
 
         const loadMessages = async () => {
@@ -158,6 +169,32 @@ const Chat = () => {
                     if (incoming.sender_id !== user.id) {
                         await markChatAsRead();
                     }
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "messages",
+                    filter: `chat_id=eq.${chatId}`,
+                },
+                (payload) => {
+                    setMessages((prev) =>
+                        prev.map((msg) => (msg.id === payload.new.id ? payload.new : msg))
+                    );
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "DELETE",
+                    schema: "public",
+                    table: "messages",
+                    filter: `chat_id=eq.${chatId}`,
+                },
+                (payload) => {
+                    setMessages((prev) => prev.filter((msg) => msg.id !== payload.old.id));
                 }
             )
             .subscribe();
@@ -258,6 +295,47 @@ const Chat = () => {
         } finally {
             setUploading(false);
         }
+    };
+
+    const handleDeleteMessage = async (msgId) => {
+        if (!window.confirm("Delete this message?")) return;
+        try {
+            await chatService.deleteMessage(msgId, user.id);
+            // the realtime subscription handles UI update
+        } catch (error) {
+            console.error("Failed to delete message:", error);
+            setModal({
+                isOpen: true,
+                title: "Error",
+                message: "Could not delete this message. You might not have permission to delete it.",
+                type: "danger",
+                confirmText: "Close",
+                onConfirm: () => setModal({ ...modal, isOpen: false }),
+                onClose: () => setModal({ ...modal, isOpen: false })
+            });
+        }
+    };
+
+    const handleEditStart = (msg) => {
+        setEditingId(msg.id);
+        setEditingText(msg.text);
+    };
+
+    const handleEditSave = async (msgId) => {
+        if (!editingText.trim()) return;
+        try {
+            await chatService.updateMessage(msgId, user.id, editingText.trim());
+            setEditingId(null);
+            setEditingText("");
+        } catch (error) {
+            console.error("Failed to update message:", error);
+            alert("Error updating message.");
+        }
+    };
+
+    const handleEditCancel = () => {
+        setEditingId(null);
+        setEditingText("");
     };
 
     const handleMarkSold = () => {
@@ -420,17 +498,31 @@ const Chat = () => {
                                     </div>
                                 )}
 
-                                <div className={`message-bubble ${isMedia ? "media" : ""}`}>
+                                <div className={`message-bubble ${isMedia ? "media" : ""} ${msg.is_deleted ? "deleted" : ""}`}>
+                                    {isOwn && !msg.is_deleted && (
+                                        <div className="msg-ops">
+                                            {!isMedia && !msg.is_deleted && (
+                                                <button
+                                                    className="btn-msg-op"
+                                                    onClick={() => handleEditStart(msg)}
+                                                    title="Edit message"
+                                                >
+                                                    ✎
+                                                </button>
+                                            )}
+                                            <button
+                                                className="btn-msg-op btn-msg-op--del"
+                                                onClick={() => handleDeleteMessage(msg.id)}
+                                                title="Delete message"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    )}
                                     {isImage ? (
-                                        <a
-                                            className="msg-media-link"
-                                            href={msg.media_url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            title="Open image"
-                                        >
+                                        <div className="msg-media-frame" onClick={() => setLightboxImage(msg.media_url)}>
                                             <img className="msg-media" src={msg.media_url} alt="Sent media" />
-                                        </a>
+                                        </div>
                                     ) : isVideo ? (
                                         <div className="msg-video-wrap">
                                             <video
@@ -441,7 +533,28 @@ const Chat = () => {
                                             />
                                         </div>
                                     ) : (
-                                        <div className="message-text">{msg.text}</div>
+                                        <div className="message-text">
+                                            {msg.is_deleted ? (
+                                                <em>This message was deleted</em>
+                                            ) : editingId === msg.id ? (
+                                                <div className="inline-edit">
+                                                    <textarea
+                                                        value={editingText}
+                                                        onChange={(e) => setEditingText(e.target.value)}
+                                                        autoFocus
+                                                    />
+                                                    <div className="inline-edit-btns">
+                                                        <button onClick={() => handleEditSave(msg.id)}>Save</button>
+                                                        <button onClick={handleEditCancel}>Cancel</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {msg.text}
+                                                    {msg.is_edited && <span className="edited-mark">(edited)</span>}
+                                                </>
+                                            )}
+                                        </div>
                                     )}
 
                                     <div className="message-time">
@@ -507,6 +620,15 @@ const Chat = () => {
                 confirmText={modal.confirmText}
                 cancelText={modal.cancelText}
             />
+
+            {lightboxImage && (
+                <div className="chat-lightbox" onClick={() => setLightboxImage(null)}>
+                    <div className="lightbox-content">
+                        <img src={lightboxImage} alt="Large view" />
+                        <button className="lightbox-close">×</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

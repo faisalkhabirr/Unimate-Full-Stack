@@ -273,6 +273,165 @@
     padding: 0;
 }
 
+.message-bubble {
+    position: relative;
+}
+
+.msg-ops {
+    position: absolute;
+    top: -12px;
+    right: -8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+.message-bubble:hover .msg-ops {
+    opacity: 1;
+}
+
+.btn-msg-op {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    color: #111;
+    border: 1px solid rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+}
+
+.btn-msg-op:hover {
+    background: #f5f5f5;
+    transform: scale(1.1);
+}
+
+.btn-msg-op--del {
+    background: #e74c3c;
+    color: white;
+    border: none;
+}
+
+.btn-msg-op--del:hover {
+    background: #c0392b;
+}
+
+.message-bubble.deleted .message-text {
+    font-style: italic;
+    color: #888;
+}
+
+.message-bubble.deleted {
+    background: #f1f1f1 !important;
+    border-color: #e2e2e2 !important;
+    box-shadow: none;
+}
+
+/* Inline Edit */
+.inline-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.inline-edit textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.1);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.inline-edit-btns {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.inline-edit-btns button {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.inline-edit-btns button:first-child {
+    background: var(--pro-accent, #e7b22f);
+    border-color: var(--pro-accent, #e7b22f);
+}
+
+.edited-mark {
+    font-size: 10px;
+    opacity: 0.5;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* Lightbox */
+.chat-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    cursor: zoom-out;
+    animation: fadeIn 0.2s ease;
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.lightbox-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    cursor: default;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: -10px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 32px;
+    cursor: pointer;
+}
+
+.msg-media-frame {
+    cursor: zoom-in;
+    transition: transform 0.2s;
+}
+
+.msg-media-frame:hover {
+    transform: scale(1.02);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 .message-row.other .message-bubble:not(.media) .message-time {
     color: rgba(17, 17, 17, 0.65);
 }

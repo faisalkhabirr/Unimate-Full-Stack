@@ -49,7 +49,25 @@ const Settings = () => {
         setLoading(true);
         setMessage({ type: "", text: "" });
 
+        let avatarUrl = user.user_metadata?.avatar_url || null;
+
         try {
+            if (avatarFile) {
+                const fileExt = avatarFile.name.split('.').pop();
+                const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage
+                    .from('avatars')
+                    .upload(fileName, avatarFile, { upsert: true });
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('avatars')
+                    .getPublicUrl(fileName);
+                
+                avatarUrl = publicUrl;
+            }
+
             const { error } = await supabase.auth.updateUser({
                 data: {
                     full_name: formData.full_name.trim(),

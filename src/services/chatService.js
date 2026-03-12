@@ -44,6 +44,28 @@ export const chatService = {
         if (error) throw error;
     },
 
+    async deleteMessage(messageId, userId) {
+        // Soft delete message (requires 'is_deleted' column)
+        const { error } = await withGlobalLoader(
+            supabase.from("messages").update({ is_deleted: true, text: "This message was deleted", media_url: null }).eq("id", messageId).eq("sender_id", userId)
+        );
+        if (error) {
+            // Fallback to hard delete if 'is_deleted' column doesn't exist yet
+            console.warn("Soft delete failed, attempting hard delete.");
+            const { error: hardErr } = await withGlobalLoader(
+                supabase.from("messages").delete().eq("id", messageId).eq("sender_id", userId)
+            );
+            if (hardErr) throw hardErr;
+        }
+    },
+
+    async updateMessage(messageId, userId, newText) {
+        const { error } = await withGlobalLoader(
+            supabase.from("messages").update({ text: newText, is_edited: true }).eq("id", messageId).eq("sender_id", userId)
+        );
+        if (error) throw error;
+    },
+
     async uploadChatImage(file, chatId, senderId) {
         const ext = file.name.split(".").pop();
         const fileName = `${chatId}/${senderId}/${Date.now()}.${ext}`;

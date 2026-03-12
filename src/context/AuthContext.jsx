@@ -9,19 +9,42 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    const checkAdminStatus = async (userId) => {
+        if (!userId) {
+            setIsAdmin(false);
+            return;
+        }
+        try {
+            const { data, error } = await supabase
+                .from('admins')
+                .select('id')
+                .eq('user_id', userId)
+                .single();
+            
+            setIsAdmin(!!data && !error);
+        } catch {
+            setIsAdmin(false);
+        }
+    };
 
     useEffect(() => {
         // Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+            checkAdminStatus(currentUser?.id);
             setLoading(false);
         });
 
         // Listen for changes (login, logout, refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+            checkAdminStatus(currentUser?.id);
             setLoading(false);
         });
 
@@ -32,6 +55,7 @@ export const AuthProvider = ({ children }) => {
         user,
         session,
         loading,
+        isAdmin,
         signOut: () => supabase.auth.signOut(),
     };
 

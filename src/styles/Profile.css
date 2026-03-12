@@ -209,9 +209,9 @@
 
 .pro-hero__right {
     display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: flex-end;
 }
 
 /* ===== Buttons ===== */
@@ -275,6 +275,21 @@
 
 .pro-btn--danger:hover {
     border-color: rgba(239, 68, 68, 0.55);
+}
+
+.pro-btn--admin {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+}
+
+.pro-btn--admin:hover {
+    background: #333;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.2);
+}
+
+.pro-btn--admin svg {
+    color: var(--pro-accent);
 }
 
 /* icon polish */
