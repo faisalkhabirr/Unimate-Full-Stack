@@ -32,6 +32,13 @@ const Chat = () => {
     const [sending, setSending] = useState(false);
     const [uploading, setUploading] = useState(false);
 
+    // Edit state
+    const [editingId, setEditingId] = useState(null);
+    const [editingText, setEditingText] = useState("");
+
+    // Lightbox state
+    const [lightboxImage, setLightboxImage] = useState(null);
+
     // Modal state
     const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "info", onConfirm: null });
 
@@ -309,6 +316,28 @@ const Chat = () => {
         }
     };
 
+    const handleEditStart = (msg) => {
+        setEditingId(msg.id);
+        setEditingText(msg.text);
+    };
+
+    const handleEditSave = async (msgId) => {
+        if (!editingText.trim()) return;
+        try {
+            await chatService.updateMessage(msgId, user.id, editingText.trim());
+            setEditingId(null);
+            setEditingText("");
+        } catch (error) {
+            console.error("Failed to update message:", error);
+            alert("Error updating message.");
+        }
+    };
+
+    const handleEditCancel = () => {
+        setEditingId(null);
+        setEditingText("");
+    };
+
     const handleMarkSold = () => {
         if (!chatInfo || !user) return;
         setModal({
@@ -471,25 +500,29 @@ const Chat = () => {
 
                                 <div className={`message-bubble ${isMedia ? "media" : ""} ${msg.is_deleted ? "deleted" : ""}`}>
                                     {isOwn && !msg.is_deleted && (
-                                        <button 
-                                            className="btn-delete-msg" 
-                                            onClick={() => handleDeleteMessage(msg.id)}
-                                            title="Delete message"
-                                            aria-label="Delete message"
-                                        >
-                                            ×
-                                        </button>
+                                        <div className="msg-ops">
+                                            {!isMedia && !msg.is_deleted && (
+                                                <button
+                                                    className="btn-msg-op"
+                                                    onClick={() => handleEditStart(msg)}
+                                                    title="Edit message"
+                                                >
+                                                    ✎
+                                                </button>
+                                            )}
+                                            <button
+                                                className="btn-msg-op btn-msg-op--del"
+                                                onClick={() => handleDeleteMessage(msg.id)}
+                                                title="Delete message"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
                                     )}
                                     {isImage ? (
-                                        <a
-                                            className="msg-media-link"
-                                            href={msg.media_url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            title="Open image"
-                                        >
+                                        <div className="msg-media-frame" onClick={() => setLightboxImage(msg.media_url)}>
                                             <img className="msg-media" src={msg.media_url} alt="Sent media" />
-                                        </a>
+                                        </div>
                                     ) : isVideo ? (
                                         <div className="msg-video-wrap">
                                             <video
@@ -501,7 +534,26 @@ const Chat = () => {
                                         </div>
                                     ) : (
                                         <div className="message-text">
-                                            {msg.is_deleted ? <em>This message was deleted</em> : msg.text}
+                                            {msg.is_deleted ? (
+                                                <em>This message was deleted</em>
+                                            ) : editingId === msg.id ? (
+                                                <div className="inline-edit">
+                                                    <textarea
+                                                        value={editingText}
+                                                        onChange={(e) => setEditingText(e.target.value)}
+                                                        autoFocus
+                                                    />
+                                                    <div className="inline-edit-btns">
+                                                        <button onClick={() => handleEditSave(msg.id)}>Save</button>
+                                                        <button onClick={handleEditCancel}>Cancel</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {msg.text}
+                                                    {msg.is_edited && <span className="edited-mark">(edited)</span>}
+                                                </>
+                                            )}
                                         </div>
                                     )}
 
@@ -568,6 +620,15 @@ const Chat = () => {
                 confirmText={modal.confirmText}
                 cancelText={modal.cancelText}
             />
+
+            {lightboxImage && (
+                <div className="chat-lightbox" onClick={() => setLightboxImage(null)}>
+                    <div className="lightbox-content">
+                        <img src={lightboxImage} alt="Large view" />
+                        <button className="lightbox-close">×</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
