@@ -11,7 +11,9 @@ const pickImage = (image_url) => {
     try {
         const parsed = JSON.parse(image_url);
         if (Array.isArray(parsed)) return parsed[0] || null;
-    } catch (_) { }
+    } catch {
+        // ignore JSON parse errors
+    }
     return image_url;
 };
 
@@ -49,7 +51,7 @@ const Chat = () => {
 
     useEffect(() => {
         scrollToBottom("auto");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // initial load scroll
     }, []);
 
     useEffect(() => {
@@ -118,7 +120,9 @@ const Chat = () => {
             try {
                 const dealData = await chatService.getDeal(chatId);
                 setDeal(dealData);
-            } catch (_) { }
+            } catch {
+                // ignore if no deal
+            }
         };
 
         const loadMessages = async () => {
@@ -158,6 +162,32 @@ const Chat = () => {
                     if (incoming.sender_id !== user.id) {
                         await markChatAsRead();
                     }
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "messages",
+                    filter: `chat_id=eq.${chatId}`,
+                },
+                (payload) => {
+                    setMessages((prev) =>
+                        prev.map((msg) => (msg.id === payload.new.id ? payload.new : msg))
+                    );
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "DELETE",
+                    schema: "public",
+                    table: "messages",
+                    filter: `chat_id=eq.${chatId}`,
+                },
+                (payload) => {
+                    setMessages((prev) => prev.filter((msg) => msg.id !== payload.old.id));
                 }
             )
             .subscribe();
@@ -257,6 +287,25 @@ const Chat = () => {
             });
         } finally {
             setUploading(false);
+        }
+    };
+
+    const handleDeleteMessage = async (msgId) => {
+        if (!window.confirm("Delete this message?")) return;
+        try {
+            await chatService.deleteMessage(msgId, user.id);
+            // the realtime subscription handles UI update
+        } catch (error) {
+            console.error("Failed to delete message:", error);
+            setModal({
+                isOpen: true,
+                title: "Error",
+                message: "Could not delete this message. You might not have permission to delete it.",
+                type: "danger",
+                confirmText: "Close",
+                onConfirm: () => setModal({ ...modal, isOpen: false }),
+                onClose: () => setModal({ ...modal, isOpen: false })
+            });
         }
     };
 
@@ -420,7 +469,17 @@ const Chat = () => {
                                     </div>
                                 )}
 
-                                <div className={`message-bubble ${isMedia ? "media" : ""}`}>
+                                <div className={`message-bubble ${isMedia ? "media" : ""} ${msg.is_deleted ? "deleted" : ""}`}>
+                                    {isOwn && !msg.is_deleted && (
+                                        <button 
+                                            className="btn-delete-msg" 
+                                            onClick={() => handleDeleteMessage(msg.id)}
+                                            title="Delete message"
+                                            aria-label="Delete message"
+                                        >
+                                            ×
+                                        </button>
+                                    )}
                                     {isImage ? (
                                         <a
                                             className="msg-media-link"
@@ -441,7 +500,9 @@ const Chat = () => {
                                             />
                                         </div>
                                     ) : (
-                                        <div className="message-text">{msg.text}</div>
+                                        <div className="message-text">
+                                            {msg.is_deleted ? <em>This message was deleted</em> : msg.text}
+                                        </div>
                                     )}
 
                                     <div className="message-time">
