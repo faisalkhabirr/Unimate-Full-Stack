@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import Modal from '../components/Modal';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
@@ -18,6 +19,25 @@ const AdminPanel = () => {
     const [adminsData, setAdminsData] = useState([]);
     const [authUsersData, setAuthUsersData] = useState([]);
     const [errorMsg, setErrorMsg] = useState('');
+    const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "info", onConfirm: null });
+
+    const showConfirm = (title, message, onConfirmAction) => {
+        setModal({
+            isOpen: true, title, message, type: "danger",
+            confirmText: "Confirm", cancelText: "Cancel",
+            onConfirm: async () => { setModal(m => ({ ...m, isOpen: false })); await onConfirmAction(); },
+            onClose: () => setModal(m => ({ ...m, isOpen: false }))
+        });
+    };
+
+    const showAlert = (title, message) => {
+        setModal({
+            isOpen: true, title, message, type: "danger",
+            confirmText: "Close",
+            onConfirm: () => setModal(m => ({ ...m, isOpen: false })),
+            onClose: () => setModal(m => ({ ...m, isOpen: false }))
+        });
+    };
 
     useEffect(() => {
         const verifyAdmin = async () => {
@@ -96,16 +116,17 @@ const AdminPanel = () => {
         const newBio = window.prompt("Edit bio for user:", usr.bio || '');
         if (newBio !== null) {
             const { error } = await supabase.from('profiles').update({ bio: newBio }).eq('id', usr.id);
-            if (error) alert("Error updating user: " + error.message);
+            if (error) showAlert("Error", "Error updating user: " + error.message);
             else fetchData('users');
         }
     };
 
-    const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Delete this user profile completely? (Note: This deletes their data but not necessarily their Supabase Auth login credentials. Use Auth tab for that.)")) return;
-        const { error } = await supabase.from('profiles').delete().eq('id', userId);
-        if (error) alert("Error deleting user: " + error.message);
-        else fetchData('users');
+    const handleDeleteUser = (userId) => {
+        showConfirm("Delete User", "Delete this user profile completely? (Note: This deletes their data but not necessarily their Supabase Auth login credentials. Use Auth tab for that.)", async () => {
+            const { error } = await supabase.from('profiles').delete().eq('id', userId);
+            if (error) showAlert("Error", "Error deleting user: " + error.message);
+            else fetchData('users');
+        });
     };
 
     // --- LISTINGS CRUD ---
@@ -121,15 +142,16 @@ const AdminPanel = () => {
             price: parseFloat(newPrice) || item.price 
         }).eq('id', item.id);
         
-        if (error) alert("Error updating listing: " + error.message);
+        if (error) showAlert("Error", "Error updating listing: " + error.message);
         else fetchData('listings');
     };
 
-    const handleDeleteListing = async (listingId) => {
-        if (!window.confirm("Are you sure you want to delete this listing permanently?")) return;
-        const { error } = await supabase.from('listings').delete().eq('id', listingId);
-        if (error) alert("Error deleting listing: " + error.message);
-        else fetchData('listings');
+    const handleDeleteListing = (listingId) => {
+        showConfirm("Delete Listing", "Are you sure you want to delete this listing permanently?", async () => {
+            const { error } = await supabase.from('listings').delete().eq('id', listingId);
+            if (error) showAlert("Error", "Error deleting listing: " + error.message);
+            else fetchData('listings');
+        });
     };
 
     // --- CATEGORIES CRUD ---
@@ -139,7 +161,7 @@ const AdminPanel = () => {
         const desc = window.prompt("Enter category description (optional):");
         
         const { error } = await supabase.from('categories').insert([{ name, description: desc }]);
-        if (error) alert("Error creating category: " + error.message);
+        if (error) showAlert("Error", "Error creating category: " + error.message);
         else fetchData('categories');
     };
 
@@ -155,15 +177,16 @@ const AdminPanel = () => {
             description: newDesc 
         }).eq('id', cat.id);
         
-        if (error) alert("Error updating category: " + error.message);
+        if (error) showAlert("Error", "Error updating category: " + error.message);
         else fetchData('categories');
     };
 
-    const handleDeleteCategory = async (catId) => {
-        if (!window.confirm("Are you sure you want to delete this category? (May fail if listings are attached to it)")) return;
-        const { error } = await supabase.from('categories').delete().eq('id', catId);
-        if (error) alert("Error deleting category: " + error.message);
-        else fetchData('categories');
+    const handleDeleteCategory = (catId) => {
+        showConfirm("Delete Category", "Are you sure you want to delete this category? (May fail if listings are attached to it)", async () => {
+            const { error } = await supabase.from('categories').delete().eq('id', catId);
+            if (error) showAlert("Error", "Error deleting category: " + error.message);
+            else fetchData('categories');
+        });
     };
 
     // --- ADMINS CRUD ---
@@ -172,28 +195,29 @@ const AdminPanel = () => {
         if (!newAdminId) return;
 
         const { error } = await supabase.from('admins').insert([{ user_id: newAdminId }]);
-        if (error) alert("Error adding admin: " + error.message);
+        if (error) showAlert("Error", "Error adding admin: " + error.message);
         else fetchData('admins');
     };
 
-    const handleRemoveAdmin = async (adminId) => {
-        if (!window.confirm("Are you sure you want to remove this admin?")) return;
-        const { error } = await supabase.from('admins').delete().eq('id', adminId);
-        if (error) alert("Error removing admin: " + error.message);
-        else fetchData('admins');
+    const handleRemoveAdmin = (adminId) => {
+        showConfirm("Remove Admin", "Are you sure you want to remove this admin?", async () => {
+            const { error } = await supabase.from('admins').delete().eq('id', adminId);
+            if (error) showAlert("Error", "Error removing admin: " + error.message);
+            else fetchData('admins');
+        });
     };
 
     // --- AUTH USERS CRUD ---
-    const handleDeleteAuthUser = async (userId) => {
-        if (!window.confirm("CRITICAL WARNING: This will permanently delete the user's authentication account. If cascade is on, it will also wipe all their data. Continue?")) return;
-        
-        const { error } = await supabase.rpc('delete_auth_user', { target_user_id: userId });
-        if (error) alert("Error deleting auth user: " + error.message);
-        else {
-            alert("User deleted from Auth.");
-            fetchData('auth_users');
-            fetchData('users');
-        }
+    const handleDeleteAuthUser = (userId) => {
+        showConfirm("Critical Warning", "CRITICAL WARNING: This will permanently delete the user's authentication account. If cascade is on, it will also wipe all their data. Continue?", async () => {
+            const { error } = await supabase.rpc('delete_auth_user', { target_user_id: userId });
+            if (error) showAlert("Error", "Error deleting auth user: " + error.message);
+            else {
+                showAlert("Success", "User deleted from Auth.");
+                fetchData('auth_users');
+                fetchData('users');
+            }
+        });
     };
 
 
@@ -438,6 +462,17 @@ const AdminPanel = () => {
                     </div>
                 )}
             </div>
+
+            <Modal
+                isOpen={modal.isOpen}
+                onClose={modal.onClose || (() => setModal({ ...modal, isOpen: false }))}
+                onConfirm={modal.onConfirm}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.confirmText}
+                cancelText={modal.cancelText}
+            />
         </div>
     );
 };

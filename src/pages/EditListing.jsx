@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import "../styles/CreateListing.css";
 
 const MAX_IMAGES = 8;
@@ -10,6 +12,12 @@ const MAX_VIDEOS = 2;
 const MAX_VIDEO_MB = 20;
 const ACCEPTED_IMAGE = ["image/jpeg", "image/png", "image/webp"];
 const ACCEPTED_VIDEO = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+
+const quillModules = {
+    toolbar: [
+        ['bold', 'italic', 'underline']
+    ]
+};
 
 const EditListing = () => {
     const { user } = useAuth();
@@ -425,7 +433,7 @@ const EditListing = () => {
                     condition: formData.condition,
                     negotiable: !!formData.negotiable,
                     location: formData.location.trim(),
-                    // stock_count: parseInt(formData.stock_count) || 1,
+                    stock_count: parseInt(formData.stock_count, 10) >= 0 ? parseInt(formData.stock_count, 10) : 1,
                     attributes: {
                         ...formData.attributes,
                         // Trim all strings in attributes
@@ -636,7 +644,7 @@ const EditListing = () => {
                                 <input
                                     className="cl-input"
                                     type="number"
-                                    min="1"
+                                    min="0"
                                     value={formData.stock_count}
                                     onChange={(e) => updateField("stock_count", e.target.value)}
                                     onKeyDown={handleKeyDown}
@@ -670,12 +678,13 @@ const EditListing = () => {
 
                         <label className="cl-field">
                             <span className="cl-label">Description *</span>
-                            <textarea
-                                className={`cl-input cl-textarea ${touched.description && !formData.description.trim() ? "is-invalid" : ""}`}
-                                rows={10}
+                            <ReactQuill
+                                theme="snow"
+                                modules={quillModules}
                                 value={formData.description}
-                                onChange={(e) => updateField("description", e.target.value)}
+                                onChange={(val) => updateField("description", (val === '<p><br></p>' ? '' : val))}
                                 placeholder="Describe the item's condition, features, and any defects. Be as detailed as possible."
+                                className={touched.description && !formData.description.trim() ? "is-invalid" : ""}
                             />
                             {touched.description && !formData.description.trim() && (
                                 <span className="cl-error-text">Description is required</span>

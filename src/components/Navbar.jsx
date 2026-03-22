@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { User, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabaseClient";
+import { notificationService } from "../services/notificationService";
 import "../styles/Navbar.css";
 import logo from "../assets/UnimateLogo1.png";
 
@@ -15,6 +16,9 @@ const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
 
     const [unreadMsgs, setUnreadMsgs] = useState(0);
+
+    // Track previous unread count to detect new messages
+    const prevUnreadRef = useRef(0);
 
     useEffect(() => {
         const onScroll = () => {
@@ -72,7 +76,28 @@ const Navbar = () => {
         }
     };
 
-    // realtime unread updater
+    // Request browser notification permission once when user is logged in
+    useEffect(() => {
+        if (user?.id) {
+            notificationService.requestPermission();
+        }
+    }, [user?.id]);
+
+    // Helper: fetch sender profile for a notification
+    const getSenderName = async (senderId) => {
+        try {
+            const { data } = await supabase
+                .from("profiles")
+                .select("full_name")
+                .eq("id", senderId)
+                .single();
+            return data?.full_name || "Someone";
+        } catch {
+            return "Someone";
+        }
+    };
+
+    // realtime unread updater + browser push notifications
     useEffect(() => {
         if (!user?.id) {
             setUnreadMsgs(0);
@@ -87,7 +112,23 @@ const Navbar = () => {
             .on(
                 "postgres_changes",
                 { event: "INSERT", schema: "public", table: "messages" },
-                () => fetchUnread(user.id)
+                async (payload) => {
+                    fetchUnread(user.id);
+
+                    const msg = payload.new;
+                    // Only notify if the message is from someone else
+                    if (msg?.sender_id && msg.sender_id !== user.id) {
+                        const senderName = await getSenderName(msg.sender_id);
+                        const messageText = msg.media_url
+                            ? "📷 Sent a photo"
+                            : msg.text || "Sent you a message";
+                        notificationService.showMessageNotification(
+                            senderName,
+                            messageText,
+                            msg.chat_id
+                        );
+                    }
+                }
             )
             .on(
                 "postgres_changes",
@@ -136,6 +177,7 @@ const Navbar = () => {
                     <li><Link to="/marketplace" className="nav-link" onClick={(e) => handleLinkClick(e, "/marketplace")}>Market Place</Link></li>
                     <li><Link to="/create-listing" className="nav-link" onClick={(e) => handleLinkClick(e, "/create-listing")}>Grow</Link></li>
                     <li><Link to="/my-listings" className="nav-link" onClick={(e) => handleLinkClick(e, "/my-listings")}>My Listings</Link></li>
+                    {/* <li><Link to="/saved" className="nav-link" onClick={(e) => handleLinkClick(e, "/saved")}>Saved</Link></li> */}
                 </ul>
 
                 <div className="nav-actions">
@@ -211,6 +253,7 @@ const Navbar = () => {
                     <Link to="/marketplace" className="nav-mobile-link" onClick={(e) => handleLinkClick(e, "/marketplace")}>Market Place</Link>
                     <Link to="/create-listing" className="nav-mobile-link" onClick={(e) => handleLinkClick(e, "/create-listing")}>Grow</Link>
                     <Link to="/my-listings" className="nav-mobile-link" onClick={(e) => handleLinkClick(e, "/my-listings")}>My Listings</Link>
+                    <Link to="/saved" className="nav-mobile-link" onClick={(e) => handleLinkClick(e, "/saved")}>Saved</Link>
 
                     {!user && (
                         <>

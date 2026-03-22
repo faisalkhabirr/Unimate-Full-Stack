@@ -90,7 +90,7 @@ const Chat = () => {
                   created_at,
                   buyer_id,
                   seller_id,
-                  listings (id, title, price, image_url)
+                  listings (id, title, price, image_url, stock_count)
                 `)
                 .eq("id", chatId)
                 .single();
@@ -297,23 +297,33 @@ const Chat = () => {
         }
     };
 
-    const handleDeleteMessage = async (msgId) => {
-        if (!window.confirm("Delete this message?")) return;
-        try {
-            await chatService.deleteMessage(msgId, user.id);
-            // the realtime subscription handles UI update
-        } catch (error) {
-            console.error("Failed to delete message:", error);
-            setModal({
-                isOpen: true,
-                title: "Error",
-                message: "Could not delete this message. You might not have permission to delete it.",
-                type: "danger",
-                confirmText: "Close",
-                onConfirm: () => setModal({ ...modal, isOpen: false }),
-                onClose: () => setModal({ ...modal, isOpen: false })
-            });
-        }
+    const handleDeleteMessage = (msgId) => {
+        setModal({
+            isOpen: true,
+            title: "Delete Message",
+            message: "Are you sure you want to delete this message?",
+            type: "danger",
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                setModal({ ...modal, isOpen: false });
+                try {
+                    await chatService.deleteMessage(msgId, user.id);
+                } catch (error) {
+                    console.error("Failed to delete message:", error);
+                    setModal({
+                        isOpen: true,
+                        title: "Error",
+                        message: "Could not delete this message. You might not have permission to delete it.",
+                        type: "danger",
+                        confirmText: "Close",
+                        onConfirm: () => setModal({ ...modal, isOpen: false }),
+                        onClose: () => setModal({ ...modal, isOpen: false })
+                    });
+                }
+            },
+            onClose: () => setModal({ ...modal, isOpen: false })
+        });
     };
 
     const handleEditStart = (msg) => {
@@ -329,7 +339,15 @@ const Chat = () => {
             setEditingText("");
         } catch (error) {
             console.error("Failed to update message:", error);
-            alert("Error updating message.");
+            setModal({
+                isOpen: true,
+                title: "Error",
+                message: "Error updating message.",
+                type: "danger",
+                confirmText: "Close",
+                onConfirm: () => setModal({ ...modal, isOpen: false }),
+                onClose: () => setModal({ ...modal, isOpen: false })
+            });
         }
     };
 
@@ -361,6 +379,15 @@ const Chat = () => {
                 chatInfo.buyer_id,
                 chatInfo.seller_id
             );
+
+            // Decrement listings stock_count
+            const currentStock = chatInfo.listings.stock_count ?? 1;
+            const newStock = Math.max(0, currentStock - 1);
+
+            await supabase
+                .from("listings")
+                .update({ stock_count: newStock })
+                .eq("id", chatInfo.listings.id);
 
             setDeal(newDeal);
 
@@ -487,7 +514,7 @@ const Chat = () => {
                         return (
                             <div key={msg.id} className={`message-row ${isOwn ? "own" : "other"}`}>
                                 {!isOwn && (
-                                    <div className="message-avatar-wrap">
+                                    <div className="message-avatar-wrap" title={senderProfile?.full_name || "User"}>
                                         {senderProfile?.avatar_url ? (
                                             <img src={senderProfile.avatar_url} alt="" className="message-avatar" />
                                         ) : (
@@ -497,6 +524,13 @@ const Chat = () => {
                                         )}
                                     </div>
                                 )}
+                                
+                                <div className="message-bubble-container" style={{ display: "flex", flexDirection: "column", maxWidth: "70%" }}>
+                                    {!isOwn && (
+                                        <div className="message-sender-name" style={{ fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.2rem", marginLeft: "0.1rem" }}>
+                                            {senderProfile?.full_name || "User"}
+                                        </div>
+                                    )}
 
                                 <div className={`message-bubble ${isMedia ? "media" : ""} ${msg.is_deleted ? "deleted" : ""}`}>
                                     {isOwn && !msg.is_deleted && (
@@ -563,6 +597,7 @@ const Chat = () => {
                                             minute: "2-digit",
                                         })}
                                     </div>
+                                </div>
                                 </div>
                             </div>
                         );

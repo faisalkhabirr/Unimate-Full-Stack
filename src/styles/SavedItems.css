@@ -49,8 +49,8 @@
 }
 
 .saved-browse-btn {
-    background: #007bff;
-    color: white;
+    background: #e7b22f;
+    color: #111;
     border: none;
     padding: 0.75rem 2rem;
     border-radius: 8px;
@@ -61,7 +61,7 @@
 }
 
 .saved-browse-btn:hover {
-    background: #0056b3;
+    background: #d4a024;
 }
 
 .saved-grid {
@@ -121,7 +121,7 @@
 }
 
 .saved-card-title:hover {
-    color: #007bff;
+    color: #e7b22f;
 }
 
 .saved-card-meta {
@@ -163,12 +163,12 @@
 }
 
 .saved-btn-view {
-    background: #007bff;
-    color: white;
+    background: #e7b22f;
+    color: #111;
 }
 
 .saved-btn-view:hover {
-    background: #0056b3;
+    background: #d4a024;
 }
 
 .saved-btn-remove {

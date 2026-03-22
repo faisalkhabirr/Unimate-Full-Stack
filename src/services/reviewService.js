@@ -3,15 +3,40 @@ import { withGlobalLoader } from "../utils/globalLoader.js";
 
 export const reviewService = {
     async getForListing(listingId) {
-        const { data, error } = await withGlobalLoader(
+        // First fetch reviews
+        const { data: reviews, error } = await withGlobalLoader(
             supabase
                 .from("listing_reviews")
                 .select("id, listing_id, reviewer_id, rating, review_text, created_at")
                 .eq("listing_id", listingId)
                 .order("created_at", { ascending: false })
         );
+
         if (error) throw error;
-        return data || [];
+        if (!reviews || reviews.length === 0) return [];
+
+        // Manual join to avoid Supabase explicit foreign key errors
+        const reviewerIds = [...new Set(reviews.map(r => r.reviewer_id).filter(Boolean))];
+        
+        let profilesData = [];
+        if (reviewerIds.length > 0) {
+            const { data: profiles } = await supabase
+                .from("profiles")
+                .select("id, full_name, avatar_url")
+                .in("id", reviewerIds);
+            profilesData = profiles || [];
+        }
+
+        // Map profiles onto reviews
+        const enrichedReviews = reviews.map(r => {
+            const profile = profilesData.find(p => p.id === r.reviewer_id);
+            return {
+                ...r,
+                profiles: profile || null
+            };
+        });
+
+        return enrichedReviews;
     },
 
     async addReview({ listingId, rating, review_text, reviewer_id }) {

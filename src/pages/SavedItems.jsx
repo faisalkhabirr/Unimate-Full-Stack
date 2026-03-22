@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
+import { wishlistService } from "../services/wishlistService";
 import Modal from "../components/Modal";
 import "../styles/SavedItems.css";
 
@@ -22,25 +22,7 @@ const SavedItems = () => {
     const fetchSavedItems = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from("saved_listings")
-                .select(`
-                    id,
-                    listing_id,
-                    created_at,
-                    listings (
-                        id,
-                        title,
-                        price,
-                        image_url,
-                        condition,
-                        seller_id
-                    )
-                `)
-                .eq("user_id", user.id)
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
+            const data = await wishlistService.getSavedListings(user.id);
             setSavedListings(data || []);
         } catch (err) {
             console.error("Error fetching saved items:", err);
@@ -51,13 +33,7 @@ const SavedItems = () => {
 
     const handleRemove = async (savedId) => {
         try {
-            const { error } = await supabase
-                .from("saved_listings")
-                .delete()
-                .eq("id", savedId);
-
-            if (error) throw error;
-
+            await wishlistService.removeSave(savedId);
             setSavedListings((prev) => prev.filter((item) => item.id !== savedId));
         } catch (err) {
             console.error("Error removing saved item:", err);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import Modal from "./Modal";
 import { chatService } from "../services/chatService";
 import "../styles/ProductModal.css";
 
@@ -9,6 +10,7 @@ const ProductModal = ({ listing, onClose }) => {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState("desc");
+    const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "info", onConfirm: null });
 
     if (!listing) return null;
 
@@ -19,7 +21,15 @@ const ProductModal = ({ listing, onClose }) => {
         }
 
         if (user.id === listing.seller_id) {
-            alert("You cannot chat with yourself!");
+            setModal({
+                isOpen: true,
+                title: "Information",
+                message: "You cannot chat with yourself!",
+                type: "info",
+                confirmText: "Close",
+                onConfirm: () => setModal({ ...modal, isOpen: false }),
+                onClose: () => setModal({ ...modal, isOpen: false })
+            });
             return;
         }
 
@@ -33,7 +43,15 @@ const ProductModal = ({ listing, onClose }) => {
             onClose();
         } catch (error) {
             console.error("Error starting chat:", error);
-            alert("Could not start chat. Please try again.");
+            setModal({
+                isOpen: true,
+                title: "Error",
+                message: "Could not start chat. Please try again.",
+                type: "danger",
+                confirmText: "Close",
+                onConfirm: () => setModal({ ...modal, isOpen: false }),
+                onClose: () => setModal({ ...modal, isOpen: false })
+            });
         }
     };
 
@@ -162,6 +180,15 @@ const ProductModal = ({ listing, onClose }) => {
                     </div>
                 </div>
             </div>
+            <Modal
+                isOpen={modal.isOpen}
+                onClose={() => setModal({ ...modal, isOpen: false })}
+                onConfirm={modal.onConfirm}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.confirmText}
+            />
         </div>
     );
 };

@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { chatService } from "../services/chatService";
 import { listingService } from "../services/listingService";
 import { reviewService } from "../services/reviewService";
+import { wishlistService } from "../services/wishlistService";
 import Modal from "../components/Modal";
 import "../styles/ProductPage.css";
 
@@ -36,6 +37,11 @@ const ProductPage = () => {
     const [myRating, setMyRating] = useState(5);
     const [myText, setMyText] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
+
+    // Wishlist state
+    const [isSavedState, setIsSavedState] = useState(false);
+    const [saveCount, setSaveCount] = useState(0);
+    const [savingToggle, setSavingToggle] = useState(false);
 
     // Modal state
     const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "info", onConfirm: null });
@@ -81,10 +87,31 @@ const ProductPage = () => {
         return mediaList[idx];
     }, [mediaList, activeImgIdx]);
 
-    // ✅ when listing changes, reset active image
     useEffect(() => {
         setActiveImgIdx(0);
     }, [listing?.id]);
+
+    // Fetch wishlist status when listing loads
+    useEffect(() => {
+        if (user && listing?.id) {
+            wishlistService.isSaved(user.id, listing.id).then(setIsSavedState);
+            wishlistService.getSaveCount(listing.id).then(setSaveCount);
+        }
+    }, [user, listing?.id]);
+
+    const handleToggleSave = async () => {
+        if (!user || !listing) return;
+        setSavingToggle(true);
+        try {
+            const { saved } = await wishlistService.toggleSave(user.id, listing.id);
+            setIsSavedState(saved);
+            setSaveCount((prev) => saved ? prev + 1 : Math.max(0, prev - 1));
+        } catch (err) {
+            console.error("Toggle save error:", err);
+        } finally {
+            setSavingToggle(false);
+        }
+    };
 
     // ✅ review summary (real)
     const ratingSummary = useMemo(() => {
@@ -119,6 +146,12 @@ const ProductPage = () => {
 
                 const product = stateListing || (await listingService.getById(id));
                 if (!mounted) return;
+
+                if (!product) {
+                    setError("Product not found.");
+                    setLoading(false);
+                    return;
+                }
 
                 setListing(product);
 
@@ -340,7 +373,35 @@ const ProductPage = () => {
                             </span>
                         </div>
 
-                        <div className="pp-price">{listing.price} BDT</div>
+                        {/* Price block — show discount if applicable */}
+                        {(() => {
+                            const offerPct = Number(listing?.offer_percent ||
+                                (listing?.attributes?.offer_percent) || 0);
+                            const originalPriceStored = Number(listing?.original_price ||
+                                (listing?.attributes?.original_price) || 0);
+                            const currentPrice = Number(listing?.price || 0);
+
+                            if (offerPct > 0 && offerPct < 100) {
+                                const origDisplay = originalPriceStored > 0
+                                    ? originalPriceStored
+                                    : Math.round(currentPrice / (1 - offerPct / 100));
+
+                                return (
+                                    <div className="pp-price-block">
+                                        <div className="pp-deal-badge">🏷️ {Math.round(offerPct)}% OFF — Limited Deal</div>
+                                        <div className="pp-price pp-price--discounted">{currentPrice.toLocaleString()} BDT</div>
+                                        {origDisplay > 0 && (
+                                            <div className="pp-price-original">Was: {origDisplay.toLocaleString()} BDT</div>
+                                        )}
+                                        <div className="pp-price-saving">
+                                            You save: {(origDisplay - currentPrice).toLocaleString()} BDT ({Math.round(offerPct)}%)
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return <div className="pp-price">{Number(listing.price || 0).toLocaleString()} BDT</div>;
+                        })()}
 
                         {/* ✅ no duplicate description */}
                         {shortDesc ? <p className="pp-shortdesc">{shortDesc}</p> : null}
@@ -405,9 +466,25 @@ const ProductPage = () => {
                         </div>
 
                         {!isOwnListing && (
-                            <button type="button" className="pp-msgseller" onClick={handleMessageSeller}>
-                                Message Seller
-                            </button>
+                            <div className="pp-action-row">
+                                <button type="button" className="pp-msgseller" onClick={handleMessageSeller}>
+                                    Message Seller
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`pp-savebtn ${isSavedState ? "is-saved" : ""}`}
+                                    onClick={handleToggleSave}
+                                    disabled={savingToggle}
+                                >
+                                    {isSavedState ? "❤️ Saved" : "🤍 Save"}
+                                </button>
+                            </div>
+                        )}
+
+                        {isOwnListing && saveCount > 0 && (
+                            <div className="pp-save-count">
+                                ❤️ {saveCount} {saveCount === 1 ? "person has" : "people have"} saved this listing
+                            </div>
                         )}
                     </div>
                 </div>
@@ -438,7 +515,11 @@ const ProductPage = () => {
                     {activeTab === "desc" ? (
                         <div className="pp-descbox">
                             <h3>Description</h3>
-                            <p className="pp-desc">{listing.description || "No description provided."}</p>
+                            {listing.description ? (
+                                <div className="pp-desc" dangerouslySetInnerHTML={{ __html: listing.description }} />
+                            ) : (
+                                <p className="pp-desc">No description provided.</p>
+                            )}
                         </div>
                     ) : (
                         <div className="pp-reviews">
@@ -505,10 +586,14 @@ const ProductPage = () => {
                                     ) : reviews.length === 0 ? (
                                         <p>No reviews yet. Be the first to review!</p>
                                     ) : (
-                                        reviews.map((r) => (
+                                    reviews.map((r) => (
                                             <div className="pp-review" key={r.id}>
                                                 <div className="pp-review-head">
-                                                    <span className="pp-review-name">{r.reviewer_id === user.id ? "You" : "User"}</span>
+                                                    <span className="pp-review-name">
+                                                        {r.reviewer_id === user.id
+                                                            ? "You"
+                                                            : (r.profiles?.full_name || "Anonymous")}
+                                                    </span>
                                                     <span className="pp-review-stars">{"★★★★★".slice(0, r.rating)}</span>
                                                 </div>
                                                 {r.review_text && <p className="pp-review-text">{r.review_text}</p>}

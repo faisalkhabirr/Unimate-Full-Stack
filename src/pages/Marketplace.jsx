@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import { chatService } from "../services/chatService";
+import { wishlistService } from "../services/wishlistService";
 import Modal from "../components/Modal";
 import "../styles/Marketplace.css";
 
@@ -26,6 +27,9 @@ const Marketplace = () => {
     const [selectedMaterials, setSelectedMaterials] = useState(new Set());
     const [selectedSizes, setSelectedSizes] = useState(new Set());
 
+    // Wishlist state
+    const [savedIds, setSavedIds] = useState(new Set());
+
     // Modal state
     const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "info", onConfirm: null });
 
@@ -36,6 +40,37 @@ const Marketplace = () => {
         fetchListings();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Fetch saved listing IDs when user is available
+    useEffect(() => {
+        if (user) {
+            wishlistService.getUserSavedIds(user.id).then(setSavedIds);
+        }
+    }, [user]);
+
+    const handleToggleSave = async (e, listingId) => {
+        e.stopPropagation();
+        if (!user) return;
+        // Optimistic UI update
+        setSavedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(listingId)) next.delete(listingId);
+            else next.add(listingId);
+            return next;
+        });
+        try {
+            await wishlistService.toggleSave(user.id, listingId);
+        } catch (err) {
+            console.error("Toggle save error:", err);
+            // Revert on error
+            setSavedIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(listingId)) next.delete(listingId);
+                else next.add(listingId);
+                return next;
+            });
+        }
+    };
 
     const fetchListings = async () => {
         try {
@@ -122,6 +157,25 @@ const Marketplace = () => {
     const getColor = (item) => getAttr(item, "color");
     const getMaterial = (item) => getAttr(item, "material");
     const getSize = (item) => getAttr(item, "size");
+
+    // ✅ Discount helper — reads offer_percent and original_price from listing or attributes
+    const getDiscountInfo = (item) => {
+        const offerPct = Number(item?.offer_percent || getAttr(item, "offer_percent") || 0);
+        const originalPrice = Number(item?.original_price || getAttr(item, "original_price") || 0);
+
+        if (!offerPct || offerPct <= 0 || offerPct > 99) return null;
+
+        const basePrice = Number(item?.price || 0);
+        const origDisplay = originalPrice > 0 ? originalPrice : (basePrice > 0 && offerPct > 0
+            ? Math.round(basePrice / (1 - offerPct / 100))
+            : 0);
+
+        return {
+            pct: Math.round(offerPct),
+            originalPrice: origDisplay,
+            discountedPrice: basePrice,
+        };
+    };
 
     const isItemInStock = (item) => {
         if (typeof item.in_stock === "boolean") return item.in_stock;
@@ -586,34 +640,80 @@ const Marketplace = () => {
                             </div>
                         ) : (
                             <div className="mp-grid">
-                                {filteredListings.map((item) => (
-                                    <article className="mp-card" key={item.id}>
-                                        <button
-                                            type="button"
-                                            className="mp-card__media"
-                                            onClick={() => navigate(`/product/${item.id}`, { state: { listing: item } })}
-                                            aria-label={`Open details for ${item.title}`}
-                                        >
-                                            <img src={getPrimaryImage(item)} alt={item.title} loading="lazy" />
-                                        </button>
+                                {filteredListings.map((item) => {
+                                    const discount = getDiscountInfo(item);
+                                    return (
+                                        <article className="mp-card" key={item.id}>
+                                            <div className="mp-card__media-wrap">
+                                                <button
+                                                    type="button"
+                                                    className="mp-card__media"
+                                                    onClick={() => navigate(`/product/${item.id}`, { state: { listing: item } })}
+                                                    aria-label={`Open details for ${item.title}`}
+                                                >
+                                                    <img src={getPrimaryImage(item)} alt={item.title} loading="lazy" />
+                                                </button>
 
-                                        <div className="mp-card__info">
-                                            <div className="mp-card__type">
-                                                {(getType(item) || "LISTING").toUpperCase()}
+                                                {discount && (
+                                                    <span className="mp-card__discount-badge">
+                                                        -{discount.pct}%
+                                                    </span>
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    className={`mp-card__save ${savedIds.has(item.id) ? "is-saved" : ""}`}
+                                                    onClick={(e) => handleToggleSave(e, item.id)}
+                                                    aria-label={savedIds.has(item.id) ? "Remove from saved" : "Save item"}
+                                                    title={savedIds.has(item.id) ? "Remove from saved" : "Save item"}
+                                                >
+                                                    {savedIds.has(item.id) ? "❤️" : "🤍"}
+                                                </button>
                                             </div>
 
-                                            <button
-                                                type="button"
-                                                className="mp-card__title"
-                                                onClick={() => navigate(`/product/${item.id}`, { state: { listing: item } })}
-                                            >
-                                                {item.title}
-                                            </button>
+                                            <div className="mp-card__info">
+                                                {discount && (
+                                                    <div className="mp-card__deal-tag">
+                                                        🏷️ {discount.pct}% off • Limited deal
+                                                    </div>
+                                                )}
 
-                                            <div className="mp-card__price">{item.price} BDT</div>
-                                        </div>
-                                    </article>
-                                ))}
+                                                <div className="mp-card__type">
+                                                    {(getType(item) || "LISTING").toUpperCase()}
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    className="mp-card__title"
+                                                    onClick={() => navigate(`/product/${item.id}`, { state: { listing: item } })}
+                                                >
+                                                    {item.title}
+                                                </button>
+
+                                                <div className="mp-card__price-block">
+                                                    {discount ? (
+                                                        <div className="mp-card__price-row">
+                                                            <span className="mp-card__price">
+                                                                {discount.discountedPrice.toLocaleString()} BDT
+                                                            </span>
+                                                            {discount.originalPrice > 0 && (
+                                                                <span className="mp-card__price-original">
+                                                                    {discount.originalPrice.toLocaleString()} BDT
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mp-card__price-row">
+                                                            <span className="mp-card__price mp-card__price--normal">
+                                                                {Number(item.price || 0).toLocaleString()} BDT
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

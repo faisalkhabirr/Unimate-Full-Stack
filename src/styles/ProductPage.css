@@ -49,14 +49,25 @@
     position: absolute;
     left: 0;
     top: 0;
+    bottom: 0;
     width: 92px;
-    height: auto;
+    height: 100%;
     border-radius: 12px;
     border: 0;
     background: transparent;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: none;
     display: block;
+    scrollbar-width: thin; /* Firefox thin scrollbar */
+    scrollbar-color: rgba(17, 17, 17, 0.2) transparent;
+}
+.pp-thumb::-webkit-scrollbar {
+    width: 4px; /* Thin Chrome/Safari scrollbar */
+}
+.pp-thumb::-webkit-scrollbar-thumb {
+    background: rgba(17, 17, 17, 0.2);
+    border-radius: 4px;
 }
 
 /* thumbs list */
@@ -76,6 +87,7 @@
     cursor: pointer;
     width: 82px;
     height: 82px;
+    flex-shrink: 0;
     display: grid;
     place-items: center;
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
@@ -217,6 +229,47 @@
     color: var(--pp-ink);
 }
 
+/* Discount pricing block */
+.pp-price-block {
+    margin-top: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.pp-deal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #c0392b;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.3rem 0.65rem;
+    border-radius: 5px;
+    width: fit-content;
+    letter-spacing: 0.02em;
+}
+
+.pp-price--discounted {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #c0392b;
+}
+
+.pp-price-original {
+    font-size: 0.95rem;
+    color: rgba(17, 17, 17, 0.5);
+    text-decoration: line-through;
+}
+
+.pp-price-saving {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #16a34a;
+}
+
+
 .pp-shortdesc {
     margin-top: 0.65rem;
     color: rgba(17, 17, 17, 0.72);
@@ -309,7 +362,6 @@
 
 /* Message seller (subtle) */
 .pp-msgseller {
-    margin-top: 0.9rem;
     width: fit-content;
     border-radius: 8px;
     padding: 0.62rem 1rem;
@@ -325,6 +377,56 @@
     transform: translateY(-1px);
     background: rgba(90, 165, 160, 0.16);
     border-color: rgba(90, 165, 160, 0.55);
+}
+
+/* Action row for buttons */
+.pp-action-row {
+    margin-top: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Save button */
+.pp-savebtn {
+    border-radius: 8px;
+    padding: 0.62rem 1rem;
+    border: 1px solid rgba(17, 17, 17, 0.12);
+    background: #fff;
+    color: rgba(17, 17, 17, 0.85);
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.pp-savebtn:hover {
+    transform: translateY(-1px);
+    background: #fef2f2;
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.pp-savebtn.is-saved {
+    background: #fef2f2;
+    border-color: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+}
+
+.pp-savebtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Seller-facing save count */
+.pp-save-count {
+    margin-top: 0.9rem;
+    padding: 0.7rem 1rem;
+    background: #fffbeb;
+    border: 1px solid rgba(231, 178, 47, 0.2);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #92400e;
 }
 
 /* ===================== Tabs ===================== */
@@ -627,6 +729,8 @@
     .pp-thumb {
         position: static;
         width: 100%;
+        height: auto;
+        overflow-y: visible;
         margin-bottom: 12px;
     }
 

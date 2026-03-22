@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import "../styles/CreateListing.css";
 
 const MAX_IMAGES = 8;
@@ -58,6 +60,11 @@ const isUniversityEmail = (email) => {
     return true;
 };
 
+const quillModules = {
+    toolbar: [
+        ['bold', 'italic', 'underline']
+    ]
+};
 const STEP_TITLES = ["Choose category", "Basics", "Details", "Photos & videos", "Publish"];
 
 const CreateListing = () => {
@@ -78,6 +85,8 @@ const CreateListing = () => {
         title: "",
         price: "",
         currency: "BDT",
+        offer_percent: "",
+        original_price: "",
         condition: "",
         negotiable: false,
         location: "",
@@ -180,7 +189,19 @@ const CreateListing = () => {
 
             const locationOk = formData.location.trim().length > 0;
 
-            return formData.title.trim().length > 0 && priceOk && formData.condition.trim().length > 0 && locationOk;
+            // Offer validation (optional): if filled must be 1-99
+            const offerPct = Number(formData.offer_percent || 0);
+            const origPrice = Number(formData.original_price || 0);
+            const salePrice = Number(formData.price || 0);
+
+            const offerOk = offerPct === 0 || (
+                offerPct >= 1 && offerPct <= 99 &&
+                origPrice > 0 &&
+                salePrice >= 0 &&
+                origPrice > salePrice
+            );
+
+            return formData.title.trim().length > 0 && priceOk && formData.condition.trim().length > 0 && locationOk && offerOk;
         }
 
         if (step === 3) return formData.description.trim().length > 0;
@@ -333,10 +354,15 @@ const CreateListing = () => {
                 condition: formData.condition,
                 negotiable: !!formData.negotiable,
                 location: formData.location.trim(),
-                // stock_count: parseInt(formData.stock_count) || 1,
+                stock_count: parseInt(formData.stock_count, 10) >= 0 ? parseInt(formData.stock_count, 10) : 1,
                 category_id: formData.categoryId,
                 seller_id: user.id,
                 attributes: formData.attributes,
+                // Offer / Discount fields
+                ...(formData.offer_percent && Number(formData.offer_percent) > 0 ? {
+                    offer_percent: parseFloat(formData.offer_percent),
+                    original_price: parseFloat(formData.original_price) || null,
+                } : {}),
                 // is_active: true,
             };
 
@@ -546,7 +572,7 @@ const CreateListing = () => {
                                 </label>
 
                                 <label className="cl-field">
-                                    <span className="cl-label">Price (BDT) *</span>
+                                    <span className="cl-label">Sale Price (BDT) *</span>
                                     <input
                                         className="cl-input"
                                         type="number"
@@ -559,6 +585,50 @@ const CreateListing = () => {
                                     />
                                 </label>
                             </div>
+
+                            {/* Offer / Discount section */}
+                            <div className="cl-row">
+                                <label className="cl-field">
+                                    <span className="cl-label">Offer % (optional)</span>
+                                    <input
+                                        className="cl-input"
+                                        type="number"
+                                        min="0"
+                                        max="99"
+                                        step="1"
+                                        value={formData.offer_percent}
+                                        onChange={(e) => updateField("offer_percent", e.target.value)}
+                                        placeholder="e.g. 20 for 20% off"
+                                    />
+                                </label>
+
+                                <label className="cl-field">
+                                    <span className="cl-label">Original Price (BDT)</span>
+                                    <input
+                                        className="cl-input"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={formData.original_price}
+                                        onChange={(e) => updateField("original_price", e.target.value)}
+                                        placeholder="Price before discount"
+                                    />
+                                </label>
+                            </div>
+
+                            {/* Live discount preview */}
+                            {Number(formData.offer_percent) > 0 && Number(formData.price) > 0 && (
+                                <div className="cl-hint" style={{ color: '#16a34a', fontWeight: 600, fontSize: '.9rem', padding: '.5rem 0' }}>
+                                    🏷️ Showing as: &nbsp;
+                                    <span style={{ textDecoration: 'line-through', color: '#888' }}>
+                                        {Number(formData.original_price) > 0
+                                            ? `${formData.original_price} BDT`
+                                            : `${Math.round(Number(formData.price) / (1 - Number(formData.offer_percent) / 100))} BDT`}
+                                    </span>
+                                    &nbsp; → <strong style={{ color: '#c0392b' }}>{formData.price} BDT</strong>
+                                    &nbsp; — <span style={{ color: '#c0392b', fontWeight: 700 }}>-{formData.offer_percent}% OFF</span>
+                                </div>
+                            )}
 
                             <div className="cl-row">
                                 <label className="cl-field">
@@ -581,7 +651,7 @@ const CreateListing = () => {
                                     <input
                                         className="cl-input"
                                         type="number"
-                                        min="1"
+                                        min="0"
                                         value={formData.stock_count}
                                         onChange={(e) => updateField("stock_count", e.target.value)}
                                         onKeyDown={handleKeyDown}
@@ -627,12 +697,13 @@ const CreateListing = () => {
                                 <h2 className="cl-cardTitle">Details</h2>
                                 <label className="cl-field">
                                     <span className="cl-label">Description *</span>
-                                    <textarea
-                                        className={`cl-input cl-textarea ${touched.description && !formData.description.trim() ? "is-invalid" : ""}`}
-                                        rows={7}
+                                    <ReactQuill
+                                        theme="snow"
+                                        modules={quillModules}
                                         value={formData.description}
-                                        onChange={(e) => updateField("description", e.target.value)}
+                                        onChange={(val) => updateField("description", (val === '<p><br></p>' ? '' : val))}
                                         placeholder="Describe the item's condition, features, and any defects. Be as detailed as possible."
+                                        className={touched.description && !formData.description.trim() ? "is-invalid" : ""}
                                     />
                                     {touched.description && !formData.description.trim() && (
                                         <span className="cl-error-text">Description is required</span>
